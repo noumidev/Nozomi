@@ -33,3 +33,6 @@
 
 # Dev
 build/
+
+# VS Code
+.vscode/
