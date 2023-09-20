@@ -16,13 +16,20 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <cstdio>
+#include <plog/Init.h>
+#include <plog/Log.h>
+#include <plog/Formatters/FuncMessageFormatter.h>
+#include <plog/Appenders/ColorConsoleAppender.h>
 
 #include "sys/emulator.hpp"
 
 int main(int argc, char **argv) {
+    // Initialize logger
+    static plog::ColorConsoleAppender<plog::FuncMessageFormatter> consoleAppender;
+    plog::init(plog::verbose, &consoleAppender);
+
     if (argc < 2) {
-        std::puts("Usage: Nozomi executable.nro");
+        PLOG_FATAL << "Please provide a Switch executable";
 
         return -1;
     }
