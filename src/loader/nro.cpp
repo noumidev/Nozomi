@@ -18,16 +18,43 @@
 
 #include "nro.hpp"
 
+#include <cstdlib>
+#include <cstring>
+
+#include <plog/Log.h>
+
 namespace loader::nro {
+
+constexpr const char *NRO_MAGIC = "NRO0";
+
+namespace HeaderOffset {
+    enum {
+        Magic = 0x10,
+    };
+}
+
+namespace HeaderFieldSize {
+    enum {
+        Magic = 4,
+    };
+}
 
 void load(FILE *file) {
     (void)file;
+
+    PLOG_FATAL << "NRO loading not implemented";
+
+    exit(0);
 }
 
 bool isNRO(FILE *file) {
-    (void)file;
+    // Load magic from file, compare to NRO_MAGIC
+    std::fseek(file, HeaderOffset::Magic, SEEK_SET);
 
-    return true;
+    char magic[HeaderFieldSize::Magic];
+    std::fread(magic, sizeof(char), sizeof(magic), file);
+
+    return std::strncmp(magic, NRO_MAGIC, sizeof(magic)) == 0;
 }
 
 }
