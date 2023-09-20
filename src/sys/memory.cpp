@@ -18,6 +18,112 @@
 
 #include "memory.hpp"
 
+#include <array>
+#include <cstdio>
+#include <ios>
+#include <list>
+
+#include <plog/Log.h>
+
 namespace sys::memory {
+
+// Page tables
+std::array<u8 *, PAGE_NUM> readTable, writeTable;
+
+std::list<MemoryBlock> memoryBlockRecord;
+
+const char *getPermissionString(u32 permission) {
+    switch (permission) {
+        case MemoryPermission::R:
+            return "(R/-/-)";
+        case MemoryPermission::W:
+            return "(-/W/-)";
+        case MemoryPermission::X:
+            return "(-/-/X)";
+        case MemoryPermission::RW:
+            return "(R/W/-)";
+        case MemoryPermission::RX:
+            return "(R/-/X)";
+        case MemoryPermission::None:
+        case MemoryPermission::DontCare:
+        default:
+            return "(-/-/-)";
+    }
+}
+
+void init() {
+    // Clear page tables
+    for (auto &i : readTable) {
+        i = NULL;
+    }
+
+    for (auto &i : writeTable) {
+        i = NULL;
+    }
+}
+
+// Allocates linear block of memory, returns pointer to allocated block (or NULL)
+void *allocate(u64 baseAddress, u64 pageNum, u32 type, u32 attribute, u32 permission) {
+    (void)type;
+    (void)attribute;
+    (void)permission;
+
+    PLOG_DEBUG << "Allocating " << pageNum << " pages @ " << std::hex << baseAddress << " " << getPermissionString(permission);
+
+    if (!isAligned(baseAddress)) {
+        PLOG_ERROR << "Base address is not aligned";
+
+        return NULL;
+    }
+
+    if (pageNum == 0) {
+        PLOG_ERROR << "Requested zero pages";
+
+        return NULL;
+    }
+
+    MemoryBlock memoryBlock{.baseAddress = baseAddress, .size = pageNum, .type = type, .attribute = attribute, .permission = permission, .mem = NULL};
+    memoryBlock.mem = std::malloc(pageNum * PAGE_SIZE);
+
+    if (memoryBlock.mem == NULL) {
+        PLOG_ERROR << "Failed to allocate memory";
+
+        return NULL;
+    }
+
+    const u64 basePage = baseAddress >> PAGE_SHIFT;
+
+    if (((memoryBlock.permission & MemoryPermission::R) != 0) || ((memoryBlock.permission & MemoryPermission::X) != 0)) {
+        for (u64 page = 0; page < pageNum; page++) {
+            const u64 readPage = page + basePage;
+
+            if (readTable[readPage] != NULL) {
+                PLOG_FATAL << "Failed to map read page";
+
+                exit(0);
+            }
+
+            readTable[readPage] = &((u8 *)memoryBlock.mem)[page * PAGE_SIZE];
+        }
+    }
+
+    if ((memoryBlock.permission & MemoryPermission::W) != 0) {
+        for (u64 page = 0; page < pageNum; page++) {
+            const u64 writePage = page + basePage;
+
+            if (writeTable[writePage] != NULL) {
+                PLOG_FATAL << "Failed to map write page";
+
+                exit(0);
+            }
+
+            writeTable[writePage] = &((u8 *)memoryBlock.mem)[page * PAGE_SIZE];
+        }
+    }
+
+    memoryBlockRecord.push_back(memoryBlock);
+
+    return memoryBlock.mem;
+}
 
 }
