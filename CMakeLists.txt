@@ -16,6 +16,7 @@ project(Nozomi CXX)
 
 # Set include directories
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include/common)
 include_directories(${PROJECT_SOURCE_DIR}/include/loader)
 include_directories(${PROJECT_SOURCE_DIR}/include/sys)
 include_directories(${PROJECT_SOURCE_DIR}/external/dynarmic)
@@ -29,13 +30,16 @@ set(SOURCES
     src/loader/loader.cpp
     src/loader/nro.cpp
     src/sys/emulator.cpp
+    src/sys/memory.cpp
 )
 
 # Set header files
 set(HEADERS
+    include/common/types.hpp
     include/loader/loader.hpp
     include/loader/nro.hpp
     include/sys/emulator.hpp
+    include/sys/memory.hpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
