@@ -18,12 +18,12 @@
 
 #include "emulator.hpp"
 
-#include <cstdio>
+#include "loader/loader.hpp"
 
 namespace sys::emulator {
 
 void init(const char *path) {
-    std::printf("NRO path: %s\n", path);
+    loader::load(path);
 }
 
 }
