@@ -28,7 +28,7 @@ constexpr u64 PAGE_MASK = PAGE_SIZE - 1;
 
 namespace MemoryBase {
     enum : u64 {
-        Application = 0x80000000,
+        Application = 1ULL << 31,
         AddressSpace = 1ULL << 36,
     };
 }
