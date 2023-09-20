@@ -64,10 +64,6 @@ void init() {
 
 // Allocates linear block of memory, returns pointer to allocated block (or NULL)
 void *allocate(u64 baseAddress, u64 pageNum, u32 type, u32 attribute, u32 permission) {
-    (void)type;
-    (void)attribute;
-    (void)permission;
-
     PLOG_DEBUG << "Allocating " << pageNum << " pages @ " << std::hex << baseAddress << " " << getPermissionString(permission);
 
     if (!isAligned(baseAddress)) {
