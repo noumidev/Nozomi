@@ -43,7 +43,7 @@ void load(const char *path) {
     if (nro::isNRO(file)) {
         PLOG_VERBOSE << "Input file is NRO";
 
-        exit(0);
+        nro::load(file);
     } else {
         PLOG_FATAL << "Unrecognized executable format";
 
