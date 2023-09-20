@@ -22,14 +22,18 @@
 
 namespace sys::memory {
 
-constexpr u64 PAGE_SIZE = 0x4000;
+constexpr u64 PAGE_SHIFT = 12;
+constexpr u64 PAGE_SIZE = 1ULL << PAGE_SHIFT;
 constexpr u64 PAGE_MASK = PAGE_SIZE - 1;
 
 namespace MemoryBase {
     enum : u64 {
         Application = 0x80000000,
+        AddressSpace = 1ULL << 36,
     };
 }
+
+constexpr u64 PAGE_NUM = MemoryBase::AddressSpace >> PAGE_SHIFT;
 
 namespace MemoryPermission {
     enum : u32 {
@@ -43,24 +47,31 @@ namespace MemoryPermission {
     };
 }
 
-union MemoryAttribute {
-    u32 raw;
-    struct {
-        u32 locked : 1;
-        u32 ipcLocked : 1;
-        u32 deviceShared : 1;
-        u32 uncached : 1;
-        u32 : 28;
+namespace MemoryAttribute {
+    enum : u32 {
+        Locked = 1 << 0,
+        IPCLocked = 1 << 1,
+        DeviceShared = 1 << 2,
+        Uncached = 1 << 3,
     };
-};
+}
 
 struct MemoryBlock {
-    u32 baseAddress, size;
+    u64 baseAddress;
+    u64 size; // In pages
+    u32 type;
+    u32 attribute;
     u32 permission;
+
+    void *mem;
 };
 
-bool isAligned(u64 n) {
+inline bool isAligned(u64 n) {
     return (n & PAGE_MASK) == 0;
 }
+
+void init();
+
+void *allocate(u64 baseAddress, u64 pageNum, u32 type, u32 attribute, u32 permission);
 
 }
