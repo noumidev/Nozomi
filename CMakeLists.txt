@@ -17,6 +17,10 @@ project(Nozomi CXX)
 # Set include directories
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include/sys)
+include_directories(${PROJECT_SOURCE_DIR}/external/dynarmic)
+include_directories(${PROJECT_SOURCE_DIR}/external/plog)
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/plog)
 
 # Set source files
 set(SOURCES
@@ -30,3 +34,5 @@ set(HEADERS
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE plog)
