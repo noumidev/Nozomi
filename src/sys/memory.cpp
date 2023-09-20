@@ -20,6 +20,7 @@
 
 #include <array>
 #include <cstdio>
+#include <cstring>
 #include <ios>
 #include <list>
 
@@ -59,6 +60,183 @@ void init() {
 
     for (auto &i : writeTable) {
         i = NULL;
+    }
+}
+
+u8 read8(u64 vaddr) {
+    if (vaddr >= MemoryBase::AddressSpace) {
+        PLOG_FATAL << "Read8 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
+
+        exit(0);
+    }
+
+    const u64 page = vaddr >> PAGE_SHIFT;
+
+    if (readTable[page] != NULL) {
+        return readTable[page][vaddr & PAGE_MASK];
+    } else {
+        switch (vaddr) {
+            default:
+                PLOG_FATAL << "Unrecognized read8 (addr = " << std::hex << vaddr << ")";
+
+                exit(0);
+        }
+    }
+}
+
+u16 read16(u64 vaddr) {
+    if (vaddr > (MemoryBase::AddressSpace - sizeof(u16))) {
+        PLOG_FATAL << "Read16 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
+
+        exit(0);
+    }
+
+    const u64 page = vaddr >> PAGE_SHIFT;
+
+    if (readTable[page] != NULL) {
+        u16 data;
+        std::memcpy(&data, &readTable[page][vaddr & PAGE_MASK], sizeof(u16));
+        
+        return data;
+    } else {
+        switch (vaddr) {
+            default:
+                PLOG_FATAL << "Unrecognized read16 (addr = " << std::hex << vaddr << ")";
+
+                exit(0);
+        }
+    }
+}
+
+u32 read32(u64 vaddr) {
+    if (vaddr > (MemoryBase::AddressSpace - sizeof(u32))) {
+        PLOG_FATAL << "Read32 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
+
+        exit(0);
+    }
+
+    const u64 page = vaddr >> PAGE_SHIFT;
+
+    if (readTable[page] != NULL) {
+        u32 data;
+        std::memcpy(&data, &readTable[page][vaddr & PAGE_MASK], sizeof(u32));
+        
+        return data;
+    } else {
+        switch (vaddr) {
+            default:
+                PLOG_FATAL << "Unrecognized read32 (addr = " << std::hex << vaddr << ")";
+
+                exit(0);
+        }
+    }
+}
+
+u64 read64(u64 vaddr) {
+    if (vaddr > (MemoryBase::AddressSpace - sizeof(u64))) {
+        PLOG_FATAL << "Read64 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
+
+        exit(0);
+    }
+
+    const u64 page = vaddr >> PAGE_SHIFT;
+
+    if (readTable[page] != NULL) {
+        u64 data;
+        std::memcpy(&data, &readTable[page][vaddr & PAGE_MASK], sizeof(u64));
+        
+        return data;
+    } else {
+        switch (vaddr) {
+            default:
+                PLOG_FATAL << "Unrecognized read64 (addr = " << std::hex << vaddr << ")";
+
+                exit(0);
+        }
+    }
+}
+
+void write8(u64 vaddr, u8 data) {
+    if (vaddr >= MemoryBase::AddressSpace) {
+        PLOG_FATAL << "Write8 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
+
+        exit(0);
+    }
+
+    const u64 page = vaddr >> PAGE_SHIFT;
+
+    if (writeTable[page] != NULL) {
+        writeTable[page][vaddr & PAGE_MASK] = data;
+    } else {
+        switch (vaddr) {
+            default:
+                PLOG_FATAL << "Unrecognized write8 (addr = " << std::hex << vaddr << ", data = " << data << ")";
+
+                exit(0);
+        }
+    }
+}
+
+void write16(u64 vaddr, u16 data) {
+    if (vaddr > (MemoryBase::AddressSpace - sizeof(u16))) {
+        PLOG_FATAL << "Write16 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
+
+        exit(0);
+    }
+
+    const u64 page = vaddr >> PAGE_SHIFT;
+
+    if (writeTable[page] != NULL) {
+        std::memcpy(&writeTable[page][vaddr & PAGE_MASK], &data, sizeof(u16));
+    } else {
+        switch (vaddr) {
+            default:
+                PLOG_FATAL << "Unrecognized write16 (addr = " << std::hex << vaddr << ", data = " << data << ")";
+
+                exit(0);
+        }
+    }
+}
+
+void write32(u64 vaddr, u32 data) {
+    if (vaddr > (MemoryBase::AddressSpace - sizeof(u32))) {
+        PLOG_FATAL << "Write16 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
+
+        exit(0);
+    }
+
+    const u64 page = vaddr >> PAGE_SHIFT;
+
+    if (writeTable[page] != NULL) {
+        std::memcpy(&writeTable[page][vaddr & PAGE_MASK], &data, sizeof(u32));
+    } else {
+        switch (vaddr) {
+            default:
+                PLOG_FATAL << "Unrecognized write32 (addr = " << std::hex << vaddr << ", data = " << data << ")";
+
+                exit(0);
+        }
+    }
+}
+
+void write64(u64 vaddr, u64 data) {
+    if (vaddr > (MemoryBase::AddressSpace - sizeof(u64))) {
+        PLOG_FATAL << "Write16 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
+
+        exit(0);
+    }
+
+    const u64 page = vaddr >> PAGE_SHIFT;
+
+    if (writeTable[page] != NULL) {
+        std::memcpy(&writeTable[page][vaddr & PAGE_MASK], &data, sizeof(u64));
+    } else {
+        switch (vaddr) {
+            default:
+                PLOG_FATAL << "Unrecognized write64 (addr = " << std::hex << vaddr << ", data = " << data << ")";
+
+                exit(0);
+        }
     }
 }
 

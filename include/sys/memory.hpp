@@ -72,6 +72,16 @@ inline bool isAligned(u64 n) {
 
 void init();
 
+u8 read8(u64 vaddr);
+u16 read16(u64 vaddr);
+u32 read32(u64 vaddr);
+u64 read64(u64 vaddr);
+
+void write8(u64 vaddr, u8 data);
+void write16(u64 vaddr, u16 data);
+void write32(u64 vaddr, u32 data);
+void write64(u64 vaddr, u64 data);
+
 void *allocate(u64 baseAddress, u64 pageNum, u32 type, u32 attribute, u32 permission);
 
 }
