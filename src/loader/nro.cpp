@@ -52,7 +52,11 @@ bool isNRO(FILE *file) {
     std::fseek(file, HeaderOffset::Magic, SEEK_SET);
 
     char magic[HeaderFieldSize::Magic];
-    std::fread(magic, sizeof(char), sizeof(magic), file);
+    if (std::fread(magic, sizeof(char), sizeof(magic), file) < sizeof(magic)) {
+        PLOG_FATAL << "Failed to read NRO header magic";
+
+        exit(0);
+    }
 
     return std::strncmp(magic, NRO_MAGIC, sizeof(magic)) == 0;
 }
