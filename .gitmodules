@@ -1,0 +1,8 @@
+[submodule "external/plog"]
+	path = external/plog
+	url = https://github.com/SergiusTheBest/plog
+	branch = master
+[submodule "external/dynarmic"]
+	path = external/dynarmic
+	url = https://github.com/merryhime/dynarmic
+	branch = master
