@@ -76,6 +76,12 @@ inline bool isAligned(u64 n) {
     return (n & PAGE_MASK) == 0;
 }
 
+inline bool isAlignedHeap(u64 n) {
+    constexpr u64 HEAP_PAGE_MASK = 0x200000 - 1;
+
+    return (n & HEAP_PAGE_MASK) == 0;
+}
+
 void init();
 
 u64 getAppSize();
@@ -83,6 +89,7 @@ u64 getHeapSize();
 u64 getUsedMemorySize();
 
 void setAppSize(u64 size);
+void setHeapSize(u64 size);
 
 u8 read8(u64 vaddr);
 u16 read16(u64 vaddr);

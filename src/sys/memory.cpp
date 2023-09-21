@@ -84,6 +84,24 @@ void setAppSize(u64 size) {
     appSize = size;
 }
 
+void setHeapSize(u64 size) {
+    if (heapSize != 0) {
+        PLOG_FATAL << "Unimplemented heap resizing";
+
+        exit(0);
+    }
+
+    PLOG_DEBUG << "Set heap size (size = " << std::hex << size << ")";
+
+    if (allocate(MemoryBase::Heap, size / PAGE_SIZE, 0, 0, MemoryPermission::RW) == NULL) {
+        PLOG_FATAL << "Failed to allocate heap";
+
+        exit(0);
+    }
+
+    heapSize = size;
+}
+
 u8 read8(u64 vaddr) {
     if (vaddr >= MemoryBase::AddressSpace) {
         PLOG_FATAL << "Read8 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
