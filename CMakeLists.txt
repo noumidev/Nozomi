@@ -32,6 +32,7 @@ set(DYNARMIC_FRONTENDS "A64")
 # Set source files
 set(SOURCES
     src/main.cpp
+    src/hle/kernel.cpp
     src/hle/svc.cpp
     src/loader/loader.cpp
     src/loader/nro.cpp
@@ -44,6 +45,8 @@ set(SOURCES
 set(HEADERS
     include/common/types.hpp
     include/hle/handle.hpp
+    include/hle/kernel.hpp
+    include/hle/object.hpp
     include/hle/result.hpp
     include/hle/svc.hpp
     include/loader/loader.hpp
