@@ -24,6 +24,8 @@
 #include <plog/Log.h>
 
 #include "nro.hpp"
+#include "sys/cpu.hpp"
+#include "sys/memory.hpp"
 
 namespace loader {
 
@@ -44,6 +46,10 @@ void load(const char *path) {
         PLOG_VERBOSE << "Input file is NRO";
 
         nro::load(file);
+        nro::makeHomebrewEnv();
+
+        sys::cpu::set(0, sys::memory::MemoryBase::HomebrewEnv);
+        sys::cpu::set(1, -1LL);
     } else {
         PLOG_FATAL << "Unrecognized executable format";
 
@@ -51,8 +57,6 @@ void load(const char *path) {
     }
 
     std::fclose(file);
-
-    exit(0);
 }
 
 }
