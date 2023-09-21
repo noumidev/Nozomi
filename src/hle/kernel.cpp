@@ -60,6 +60,10 @@ Handle makeSession(Handle portHandle) {
     return handle;
 }
 
+KObject *getObject(Handle handle) {
+    return table::get(handle);
+}
+
 KPort *getPort(const char *name) {
     PLOG_DEBUG << "Searching port " << name;
 

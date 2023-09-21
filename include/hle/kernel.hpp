@@ -30,6 +30,8 @@ Handle getMainThreadHandle();
 Handle makePort(const char *name);
 Handle makeSession(Handle portHandle);
 
+KObject *getObject(Handle handle);
+
 KPort *getPort(const char *name);
 
 }
