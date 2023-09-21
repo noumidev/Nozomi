@@ -43,6 +43,8 @@ set(SOURCES
 # Set header files
 set(HEADERS
     include/common/types.hpp
+    include/hle/handle.hpp
+    include/hle/result.hpp
     include/hle/svc.hpp
     include/loader/loader.hpp
     include/loader/nro.hpp
