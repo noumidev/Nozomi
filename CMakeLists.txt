@@ -22,13 +22,18 @@ include_directories(${PROJECT_SOURCE_DIR}/include/sys)
 include_directories(${PROJECT_SOURCE_DIR}/external/dynarmic)
 include_directories(${PROJECT_SOURCE_DIR}/external/plog)
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/dynarmic)
 add_subdirectory(${PROJECT_SOURCE_DIR}/external/plog)
+
+set(DYNARMIC_TESTS OFF)
+set(DYNARMIC_FRONTENDS "A64")
 
 # Set source files
 set(SOURCES
     src/main.cpp
     src/loader/loader.cpp
     src/loader/nro.cpp
+    src/sys/cpu.cpp
     src/sys/emulator.cpp
     src/sys/memory.cpp
 )
@@ -38,10 +43,11 @@ set(HEADERS
     include/common/types.hpp
     include/loader/loader.hpp
     include/loader/nro.hpp
+    include/sys/cpu.hpp
     include/sys/emulator.hpp
     include/sys/memory.hpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE plog)
+target_link_libraries(${PROJECT_NAME} PRIVATE dynarmic plog)
