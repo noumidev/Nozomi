@@ -43,8 +43,12 @@ namespace InfoType {
         AliasRegionSize = 3,
         HeapRegionAddress = 4,
         HeapRegionSize = 5,
+        TotalMemorySize = 6,
+        UsedMemorySize = 7,
         AslrRegionAddress = 12,
         AslrRegionSize = 13,
+        StackRegionAddress = 14,
+        StackRegionSize = 15,
     };
 }
 
@@ -98,6 +102,20 @@ void svcGetInfo() {
 
             sys::cpu::set(1, sys::memory::getHeapSize());
             break;
+        case InfoType::TotalMemorySize:
+            if ((handle != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for TotalMemorySize";
+            }
+
+            sys::cpu::set(1, sys::memory::TOTAL_MEMORY_SIZE);
+            break;
+        case InfoType::UsedMemorySize:
+            if ((handle != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for UsedMemorySize";
+            }
+
+            sys::cpu::set(1, sys::memory::getUsedMemorySize());
+            break;
         case InfoType::AslrRegionAddress:
             if ((handle != KernelHandles::CurrentProcess) || (subType != 0)) {
                 PLOG_WARNING << "Unexpected handle/sub type for AslrRegionAddress";
@@ -111,6 +129,20 @@ void svcGetInfo() {
             }
 
             sys::cpu::set(1, sys::memory::getAppSize()); // Probably
+            break;
+        case InfoType::StackRegionAddress:
+            if ((handle != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for StackRegionAddress";
+            }
+
+            sys::cpu::set(1, sys::memory::MemoryBase::Stack);
+            break;
+        case InfoType::StackRegionSize:
+            if ((handle != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for StackRegionSize";
+            }
+
+            sys::cpu::set(1, sys::memory::PAGE_SIZE);
             break;
         default:
             PLOG_FATAL << "Unknown type " << type;
