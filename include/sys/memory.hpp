@@ -101,6 +101,8 @@ void write16(u64 vaddr, u16 data);
 void write32(u64 vaddr, u32 data);
 void write64(u64 vaddr, u64 data);
 
+void *getPointer(u64 vaddr);
+
 void *allocate(u64 baseAddress, u64 pageNum, u32 type, u32 attribute, u32 permission);
 
 MemoryBlock queryMemory(u64 addr);

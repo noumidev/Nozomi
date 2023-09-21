@@ -279,6 +279,27 @@ void write64(u64 vaddr, u64 data) {
     }
 }
 
+void *getPointer(u64 vaddr) {
+    if (vaddr >= MemoryBase::AddressSpace) {
+        PLOG_FATAL << "Pointer address outside of address space bounds (addr = " << std::hex << vaddr << ")";
+
+        exit(0);
+    }
+
+    const u64 page = vaddr >> PAGE_SHIFT;
+
+    // Check both read and write tables
+    if (readTable[page] != 0) {
+        return (void *)&readTable[page][vaddr & PAGE_MASK];
+    } else if (writeTable[page] != 0) {
+        return (void *)&writeTable[page][vaddr & PAGE_MASK];
+    }
+
+    PLOG_FATAL << "Invalid pointer (addr = " << std::hex << vaddr << ")";
+
+    exit(0);
+}
+
 // Allocates linear block of memory, returns pointer to allocated block (or NULL)
 void *allocate(u64 baseAddress, u64 pageNum, u32 type, u32 attribute, u32 permission) {
     PLOG_DEBUG << "Allocating " << pageNum << " pages @ " << std::hex << baseAddress << " " << getPermissionString(permission);
