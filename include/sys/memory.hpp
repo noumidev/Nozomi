@@ -34,6 +34,7 @@ namespace MemoryBase {
         Stack = 1ULL << 29,
         TLSBase = 1ULL << 30,
         Application = 1ULL << 31,
+        Heap = 1ULL << 32,
         AddressSpace = 1ULL << 36,
     };
 }
@@ -77,7 +78,11 @@ inline bool isAligned(u64 n) {
 
 void init();
 
+u64 getAppSize();
+u64 getHeapSize();
 u64 getUsedMemorySize();
+
+void setAppSize(u64 size);
 
 u8 read8(u64 vaddr);
 u16 read16(u64 vaddr);

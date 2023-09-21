@@ -34,6 +34,8 @@ std::array<u8 *, PAGE_NUM> readTable, writeTable;
 
 std::list<MemoryBlock> memoryBlockRecord;
 
+u64 appSize = 0;
+u64 heapSize = 0;
 u64 usedMemorySize = 0;
 
 const char *getPermissionString(u32 permission) {
@@ -66,8 +68,20 @@ void init() {
     }
 }
 
+u64 getAppSize() {
+    return appSize;
+}
+
+u64 getHeapSize() {
+    return heapSize;
+}
+
 u64 getUsedMemorySize() {
     return usedMemorySize;
+}
+
+void setAppSize(u64 size) {
+    appSize = size;
 }
 
 u8 read8(u64 vaddr) {
