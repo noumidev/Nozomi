@@ -18,13 +18,7 @@
 
 #pragma once
 
-#include <cstdlib>
-#include <cstring>
-
-#include <plog/Log.h>
-
 #include "handle.hpp"
-#include "kernel.hpp"
 #include "types.hpp"
 
 namespace hle {
@@ -36,52 +30,38 @@ class KObject {
 protected:
     Handle handle;
 
+    int refCount;
+
 public:
-    KObject() {
-        this->handle = kernel::getNextHandle();
-    }
+    KObject();
+    virtual ~KObject();
 
-    ~KObject() = default;
+    Handle getHandle();
 
-    Handle getHandle() {
-        return this->handle;
-    }
+    void setHandle(Handle handle);
+
+    void open();
+    bool close();
 };
 
 class KPort : public KObject {
     char name[KPORT_NAME_LENGTH];
 
 public:
-    KPort(const char *name) {
-        std::strncpy(this->name, name, KPORT_NAME_LENGTH);
+    KPort(const char *name);
+    ~KPort();
 
-        if (this->name[KPORT_NAME_LENGTH - 1] != 0) {
-            PLOG_FATAL << "KPort name overflowed";
-
-            exit(0);
-        }
-    }
-
-    ~KPort() = default;
-
-    const char *getName() {
-        return name;
-    }
+    const char *getName();
 };
 
 class KSession : public KObject {
     Handle portHandle;
 
 public:
-    KSession(Handle portHandle) {
-        this->portHandle = portHandle;
-    }
+    KSession(Handle portHandle);
+    ~KSession();
 
-    ~KSession() = default;
-
-    Handle getPortHandle() {
-        return this->portHandle;
-    }
+    Handle getPortHandle();
 };
 
 }
