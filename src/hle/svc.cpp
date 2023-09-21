@@ -23,12 +23,64 @@
 
 #include <plog/Log.h>
 
+#include "cpu.hpp"
+#include "handle.hpp"
+#include "result.hpp"
+
 namespace hle::svc {
+
+namespace SupervisorCall {
+    enum : u32 {
+        GetInfo = 0x29,
+    };
+}
+
+// GetInfo
+namespace InfoType {
+    enum : u32 {
+        AliasRegionAddress = 2,
+        AliasRegionSize = 3,
+    };
+}
 
 void handleSVC(u32 svc) {
     switch (svc) {
+        case SupervisorCall::GetInfo:
+            svcGetInfo();
+            break;
         default:
             PLOG_FATAL << "Unimplemented SVC " << std::hex << svc;
+
+            exit(0);
+    }
+}
+
+void svcGetInfo() {
+    const u32 type = sys::cpu::get(1);
+    const Handle handle = sys::cpu::get(2);
+    const u64 subType = sys::cpu::get(3);
+
+    PLOG_INFO << "svcGetInfo (type = " << std::hex << type << ", handle = " << handle << ", sub type = " << subType << ")";
+
+    sys::cpu::set(0, Result::Success);
+
+    switch (type) {
+        case InfoType::AliasRegionAddress:
+            if ((handle != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for AliasRegionAddress";
+            }
+
+            sys::cpu::set(1, 0); // What is this?
+            break;
+        case InfoType::AliasRegionSize:
+            if ((handle != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for AliasRegionSize";
+            }
+
+            sys::cpu::set(1, 0); // What is this?
+            break;
+        default:
+            PLOG_FATAL << "Unknown type " << type;
 
             exit(0);
     }
