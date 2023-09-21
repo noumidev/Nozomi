@@ -62,6 +62,26 @@ union Segment {
 
 static_assert(sizeof(Segment) == HeaderFieldSize::SegmentHeader);
 
+namespace EnvContextKey {
+    enum : u32 {
+        EndOfList = 0,
+        MainThreadHandle = 1,
+        AppletType = 7,
+    };
+}
+
+struct EnvContextEntry {
+    u32 key, flags;
+    u64 value[2];
+} __attribute__((packed));
+
+// Dummy list of entries for NRO/homebrew
+constexpr EnvContextEntry envContextTable[] = {
+    EnvContextEntry{.key = EnvContextKey::MainThreadHandle, .flags = 1, .value{1, 0}}, // Main thread handle = 1
+    EnvContextEntry{.key = EnvContextKey::AppletType, .flags = 1, .value{0, 0}},       // Applet type = Application
+    EnvContextEntry{.key = EnvContextKey::EndOfList, .flags = 1, .value{0, 0}},
+};
+
 void load(FILE *file) {
     // Try loading NRO header into buffer
     std::fseek(file, 0, SEEK_SET);
@@ -174,6 +194,11 @@ void load(FILE *file) {
     }
 
     // TODO: check for assets
+}
+
+void makeHomebrewEnv() {
+    void *homebrewEnv = sys::memory::allocate(sys::memory::MemoryBase::HomebrewEnv, 1, 0, 0, sys::memory::MemoryPermission::R);
+    std::memcpy(homebrewEnv, envContextTable, sizeof(envContextTable));
 }
 
 bool isNRO(FILE *file) {

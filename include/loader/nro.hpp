@@ -23,5 +23,7 @@
 namespace loader::nro {
     void load(FILE *file);
 
+    void makeHomebrewEnv();
+
     bool isNRO(FILE *file);
 }
