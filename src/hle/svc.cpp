@@ -32,6 +32,7 @@ namespace hle::svc {
 
 namespace SupervisorCall {
     enum : u32 {
+        SetHeapSize = 0x01,
         GetInfo = 0x29,
     };
 }
@@ -54,6 +55,9 @@ namespace InfoType {
 
 void handleSVC(u32 svc) {
     switch (svc) {
+        case SupervisorCall::SetHeapSize:
+            svcSetHeapSize();
+            break;
         case SupervisorCall::GetInfo:
             svcGetInfo();
             break;
@@ -149,6 +153,20 @@ void svcGetInfo() {
 
             exit(0);
     }
+}
+
+void svcSetHeapSize() {
+    const u64 size = sys::cpu::get(1);
+
+    PLOG_INFO << "svcSetHeapSize (size = " << std::hex << size << ")";
+
+    if (!sys::memory::isAlignedHeap(size)) {
+        PLOG_FATAL << "Unaligned heap size";
+
+        exit(0);
+    }
+
+    sys::memory::setHeapSize(size);
 }
 
 }
