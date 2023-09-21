@@ -20,6 +20,7 @@
 
 #include <array>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <ios>
 #include <list>
