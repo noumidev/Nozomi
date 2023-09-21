@@ -19,16 +19,17 @@
 #pragma once
 
 #include "handle.hpp"
+#include "object.hpp"
 
 namespace hle::kernel {
 
 void init();
 
-Handle getNextHandle();
-
 Handle getMainThreadHandle();
 
 Handle makePort(const char *name);
 Handle makeSession(Handle portHandle);
+
+KPort *getPort(const char *name);
 
 }

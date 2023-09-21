@@ -20,65 +20,58 @@
 
 #include <ios>
 #include <map>
+#include <type_traits>
 #include <utility>
 
 #include <plog/Log.h>
 
-#include "object.hpp"
+#include "handle_table.hpp"
 
 namespace hle::kernel {
 
-std::vector<KObject> kernelObjects;
-
-// Handle->KObject maps
-std::map<Handle, KObject *> kernelObjectMap;
-std::map<Handle, KPort *> portMap;
-
 void init() {
+    table::init();
+
     (void)makePort("sm:");
 }
 
-Handle getNextHandle() {
-    // 0 is an invalid handle, 1 is the main thread handle
-    static Handle handles = 2;
-
-    return handles++;
-}
-
 Handle getMainThreadHandle() {
-    return 1;
-}
-
-KObject *getLastObject() {
-    return &kernelObjects[kernelObjects.size() - 1];
+    // TODO: return actual main thread handle
+    return Handle{.index = 1, .type = HandleType::KThread};
 }
 
 Handle makePort(const char *name) {
-    kernelObjects.emplace_back(KPort(name));
+    const Handle handle = table::add(HandleType::KPort, new KPort(name));
 
-    KPort *port = (KPort *)getLastObject();
+    ((KPort *)table::getLast())->setHandle(handle);
 
-    const Handle handle = port->getHandle();
-
-    kernelObjectMap.insert(std::pair<Handle, KObject *>{handle, port});
-
-    PLOG_DEBUG << "Making KPort (name = " << name << ", handle = " << std::hex << handle << ")";
+    PLOG_DEBUG << "Making KPort (name = " << name << ", handle = " << std::hex << handle.raw << ")";
 
     return handle;
 }
 
 Handle makeSession(Handle portHandle) {
-    kernelObjects.emplace_back(KSession(portHandle));
+    const Handle handle = table::add(HandleType::KSession, new KSession(portHandle));
 
-    KSession *session = (KSession *)getLastObject();
+    ((KSession *)table::getLast())->setHandle(handle);
 
-    const Handle handle = session->getHandle();
-
-    kernelObjectMap.insert(std::pair<Handle, KObject *>{handle, session});
-
-    PLOG_DEBUG << "Making KSession (port handle = " << std::hex << portHandle << ", handle = " << handle << ")";
+    PLOG_DEBUG << "Making KSession (port handle = " << std::hex << portHandle.raw << ", handle = " << handle.raw << ")";
 
     return handle;
+}
+
+KPort *getPort(const char *name) {
+    PLOG_DEBUG << "Searching port " << name;
+
+    KPort *port = table::getPort(name);
+
+    if (port != NULL) {
+        return port;
+    }
+
+    PLOG_FATAL << "Unable to find port " << name;
+
+    exit(0);
 }
 
 }
