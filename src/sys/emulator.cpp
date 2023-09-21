@@ -19,11 +19,29 @@
 #include "emulator.hpp"
 
 #include "loader/loader.hpp"
+#include "sys/cpu.hpp"
+#include "sys/memory.hpp"
 
 namespace sys::emulator {
 
+constexpr u64 CYCLES_PER_FRAME = cpu::CPU_CLOCK / 60;
+
 void init(const char *path) {
+    cpu::init();
+
+    // Load executable
     loader::load(path);
+
+    // Set up stack and thread-local storage (this will be replaced later on)
+    (void)memory::allocate(memory::MemoryBase::Stack, 1, 0, 0, memory::MemoryPermission::RW);
+    (void)memory::allocate(memory::MemoryBase::TLSBase, 1, 0, 0, memory::MemoryPermission::RW);
+}
+
+void run() {
+    while (true) {
+        cpu::run(CYCLES_PER_FRAME);
+        cpu::addTicks(CYCLES_PER_FRAME);
+    }
 }
 
 }

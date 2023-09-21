@@ -22,4 +22,6 @@ namespace sys::emulator {
 
 void init(const char *path);
 
+void run();
+
 }
