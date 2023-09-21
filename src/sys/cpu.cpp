@@ -28,6 +28,7 @@
 #include <plog/Log.h>
 
 #include "memory.hpp"
+#include "svc.hpp"
 
 namespace sys::cpu {
 
@@ -121,11 +122,7 @@ public:
     }
 
     void CallSVC(u32 swi) override {
-        (void)swi;
-
-        PLOG_FATAL << "Unimplemented supervisor calls";
-
-        exit(0);
+        hle::svc::handleSVC(swi);
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception exception) override {

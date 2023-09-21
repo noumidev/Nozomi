@@ -17,6 +17,7 @@ project(Nozomi CXX)
 # Set include directories
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include/common)
+include_directories(${PROJECT_SOURCE_DIR}/include/hle)
 include_directories(${PROJECT_SOURCE_DIR}/include/loader)
 include_directories(${PROJECT_SOURCE_DIR}/include/sys)
 include_directories(${PROJECT_SOURCE_DIR}/external/dynarmic)
@@ -31,6 +32,7 @@ set(DYNARMIC_FRONTENDS "A64")
 # Set source files
 set(SOURCES
     src/main.cpp
+    src/hle/svc.cpp
     src/loader/loader.cpp
     src/loader/nro.cpp
     src/sys/cpu.cpp
@@ -41,6 +43,7 @@ set(SOURCES
 # Set header files
 set(HEADERS
     include/common/types.hpp
+    include/hle/svc.hpp
     include/loader/loader.hpp
     include/loader/nro.hpp
     include/sys/cpu.hpp
