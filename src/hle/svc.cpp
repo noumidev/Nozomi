@@ -38,6 +38,8 @@ namespace SupervisorCall {
         SetHeapSize = 0x01,
         QueryMemory = 0x06,
         ConnectToNamedPort = 0x1F,
+        SendSyncRequest = 0x21,
+        OutputDebugString = 0x27,
         GetInfo = 0x29,
     };
 }
@@ -55,6 +57,10 @@ namespace InfoType {
         AslrRegionSize = 13,
         StackRegionAddress = 14,
         StackRegionSize = 15,
+        SystemResourceSizeTotal = 16,
+        SystemResourceSizeUsed = 17,
+        InitialProcessIdRange = 19,
+        UserExceptionContextAddress = 20,
     };
 }
 
@@ -68,6 +74,12 @@ void handleSVC(u32 svc) {
             break;
         case SupervisorCall::ConnectToNamedPort:
             svcConnectToNamedPort();
+            break;
+        case SupervisorCall::SendSyncRequest:
+            svcSendSyncRequest();
+            break;
+        case SupervisorCall::OutputDebugString:
+            svcOutputDebugString();
             break;
         case SupervisorCall::GetInfo:
             svcGetInfo();
@@ -170,11 +182,65 @@ void svcGetInfo() {
 
             sys::cpu::set(1, sys::memory::PAGE_SIZE);
             break;
+        case InfoType::SystemResourceSizeTotal:
+            if ((handle.raw != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for SystemResourceSizeTotal";
+            }
+
+            sys::cpu::set(1, sys::memory::TOTAL_MEMORY_SIZE); // Maybe? (probably not)
+            break;
+        case InfoType::SystemResourceSizeUsed:
+            if ((handle.raw != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for SystemResourceSizeUsed";
+            }
+
+            sys::cpu::set(1, sys::memory::getUsedMemorySize()); // Maybe? (probably not)
+            break;
+        case InfoType::InitialProcessIdRange:
+            if (handle.raw != 0) {
+                PLOG_WARNING << "Unexpected handle type for InitialProcessIdRange";
+            }
+
+            switch (subType) {
+                case 0: // Lower bound
+                    sys::cpu::set(1, 0);
+                    break;
+                case 1: // Upper bound
+                    sys::cpu::set(1, 0);
+                    break;
+                default:
+                    PLOG_FATAL << "Invalid sub type InitialProcessIdRange";
+
+                    exit(0);
+            }
+            break;
+        case InfoType::UserExceptionContextAddress:
+            if ((handle.raw != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for UserExceptionContextAddress";
+            }
+
+            sys::cpu::set(1, 0); // TODO: figure out which values are normally returned on a real Switch
+            break;
         default:
             PLOG_FATAL << "Unknown type " << type;
 
             exit(0);
     }
+}
+
+void svcOutputDebugString() {
+    const u64 string = sys::cpu::get(0);
+    const u64 size = sys::cpu::get(1);
+
+    PLOG_INFO << "svcOutputDebugString (string* = " << std::hex << string << ", size = " << size << ")";
+
+    char msg[size + 1];
+    std::memset(msg, 0, sizeof(msg));
+    std::memcpy(msg, sys::memory::getPointer(string), size);
+
+    PLOG_DEBUG << (const char *)msg;
+
+    sys::cpu::set(0, Result::Success);
 }
 
 void svcQueryMemory() {
@@ -196,6 +262,16 @@ void svcQueryMemory() {
 
     sys::cpu::set(0, Result::Success);
     sys::cpu::set(1, 0); // Page info?
+}
+
+void svcSendSyncRequest() {
+    const Handle handle = hle::makeHandle((u32)sys::cpu::get(0));
+
+    PLOG_INFO << "svcSendSyncRequest (session handle = " << std::hex << handle.raw << ")";
+
+    PLOG_FATAL << "Unimplemented svcSendSyncRequest";
+
+    exit(0);
 }
 
 void svcSetHeapSize() {

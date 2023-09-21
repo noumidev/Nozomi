@@ -26,7 +26,9 @@ void handleSVC(u32 svc);
 
 void svcConnectToNamedPort();
 void svcGetInfo();
+void svcOutputDebugString();
 void svcQueryMemory();
+void svcSendSyncRequest();
 void svcSetHeapSize();
 
 }
