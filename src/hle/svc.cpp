@@ -25,6 +25,7 @@
 
 #include "cpu.hpp"
 #include "handle.hpp"
+#include "memory.hpp"
 #include "result.hpp"
 
 namespace hle::svc {
@@ -40,6 +41,10 @@ namespace InfoType {
     enum : u32 {
         AliasRegionAddress = 2,
         AliasRegionSize = 3,
+        HeapRegionAddress = 4,
+        HeapRegionSize = 5,
+        AslrRegionAddress = 12,
+        AslrRegionSize = 13,
     };
 }
 
@@ -60,7 +65,7 @@ void svcGetInfo() {
     const Handle handle = sys::cpu::get(2);
     const u64 subType = sys::cpu::get(3);
 
-    PLOG_INFO << "svcGetInfo (type = " << std::hex << type << ", handle = " << handle << ", sub type = " << subType << ")";
+    PLOG_INFO << "svcGetInfo (type = " << type << ", handle = " << std::hex << handle << ", sub type = " << subType << ")";
 
     sys::cpu::set(0, Result::Success);
 
@@ -78,6 +83,34 @@ void svcGetInfo() {
             }
 
             sys::cpu::set(1, 0); // What is this?
+            break;
+        case InfoType::HeapRegionAddress:
+            if ((handle != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for HeapRegionAddress";
+            }
+
+            sys::cpu::set(1, sys::memory::MemoryBase::Heap);
+            break;
+        case InfoType::HeapRegionSize:
+            if ((handle != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for HeapRegionSize";
+            }
+
+            sys::cpu::set(1, sys::memory::getHeapSize());
+            break;
+        case InfoType::AslrRegionAddress:
+            if ((handle != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for AslrRegionAddress";
+            }
+
+            sys::cpu::set(1, sys::memory::MemoryBase::Application); // Probably
+            break;
+        case InfoType::AslrRegionSize:
+            if ((handle != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for AslrRegionSize";
+            }
+
+            sys::cpu::set(1, sys::memory::getAppSize()); // Probably
             break;
         default:
             PLOG_FATAL << "Unknown type " << type;
