@@ -28,6 +28,9 @@ constexpr u64 PAGE_MASK = PAGE_SIZE - 1;
 
 namespace MemoryBase {
     enum : u64 {
+        HomebrewEnv = 1ULL << 28,
+        Stack = 1ULL << 29,
+        TLSBase = 1ULL << 30,
         Application = 1ULL << 31,
         AddressSpace = 1ULL << 36,
     };
