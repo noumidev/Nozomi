@@ -33,6 +33,7 @@ namespace hle::svc {
 namespace SupervisorCall {
     enum : u32 {
         SetHeapSize = 0x01,
+        QueryMemory = 0x06,
         GetInfo = 0x29,
     };
 }
@@ -57,6 +58,9 @@ void handleSVC(u32 svc) {
     switch (svc) {
         case SupervisorCall::SetHeapSize:
             svcSetHeapSize();
+            break;
+        case SupervisorCall::QueryMemory:
+            svcQueryMemory();
             break;
         case SupervisorCall::GetInfo:
             svcGetInfo();
@@ -153,6 +157,27 @@ void svcGetInfo() {
 
             exit(0);
     }
+}
+
+void svcQueryMemory() {
+    const u64 memoryInfo = sys::cpu::get(0);
+    const u64 address = sys::cpu::get(2);
+
+    PLOG_INFO << "svcQueryMemory (MemoryInfo* = " << std::hex << memoryInfo << ", address = " << address << ")";
+
+    const sys::memory::MemoryBlock memoryBlock = sys::memory::queryMemory(address);
+
+    sys::memory::write64(memoryInfo, memoryBlock.baseAddress);
+    sys::memory::write64(memoryInfo + 8, sys::memory::PAGE_SIZE * memoryBlock.size);
+    sys::memory::write32(memoryInfo + 16, memoryBlock.type);
+    sys::memory::write32(memoryInfo + 20, memoryBlock.attribute);
+    sys::memory::write32(memoryInfo + 24, memoryBlock.permission);
+    sys::memory::write32(memoryInfo + 28, 0); // IpcRefCount?
+    sys::memory::write32(memoryInfo + 32, 0); // DeviceRefCount?
+    sys::memory::write32(memoryInfo + 36, 0); // Padding
+
+    sys::cpu::set(0, Result::Success);
+    sys::cpu::set(1, 0); // Page info?
 }
 
 void svcSetHeapSize() {

@@ -25,6 +25,7 @@ namespace hle::svc {
 void handleSVC(u32 svc);
 
 void svcGetInfo();
+void svcQueryMemory();
 void svcSetHeapSize();
 
 }
