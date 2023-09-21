@@ -193,6 +193,8 @@ void load(FILE *file) {
         PLOG_WARNING << "Unimplemented extra segments";
     }
 
+    sys::memory::setAppSize(text.size + ro.size + dataSize);
+
     // TODO: check for assets
 }
 
