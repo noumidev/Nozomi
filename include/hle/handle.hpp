@@ -22,12 +22,38 @@
 
 namespace hle {
 
-using Handle = u32;
+union Handle {
+    u32 raw;
+    struct {
+        u32 index : 20; // Index into handle table
+        u32 type : 8;
+        u32 : 4;
+    };
+};
+
+namespace HandleType {
+    enum : u32 {
+        None,
+        KPort,
+        KSession,
+        KThread, // Does not exist yet
+        NumHandleTypes,
+    };
+}
 
 namespace KernelHandles {
-    enum : Handle {
+    enum : u32 {
+        CurrentThread = 0xFFFF8000,
         CurrentProcess = 0xFFFF8001,
     };
+}
+
+inline Handle makeHandle(u32 n) {
+    return Handle{.raw = n};
+}
+
+inline Handle makeHandle(u32 index, u32 type) {
+    return Handle{.index = index, .type = type};
 }
 
 }
