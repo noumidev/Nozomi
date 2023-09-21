@@ -82,6 +82,32 @@ Handle add(u32 type, KObject *object) {
     return handle;
 }
 
+KObject *get(Handle handle) {
+    if (handle.index >= nextIndex) {
+        PLOG_FATAL << "Invalid index";
+
+        exit(0);
+    }
+
+    const TableEntry *entry = &handleTable[handle.index];
+
+    if (entry->type != handle.type) {
+        PLOG_FATAL << "Object type mismatch";
+
+        exit(0);
+    }
+
+    KObject *object = entry->object;
+
+    if (object == NULL) {
+        PLOG_FATAL << "Invalid object";
+
+        exit(0);
+    }
+    
+    return object;
+}
+
 KObject *getLast() {
     KObject *object = handleTable[getPrevIndex()].object;
 

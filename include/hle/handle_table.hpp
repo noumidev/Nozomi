@@ -28,7 +28,9 @@ void init();
 
 Handle add(u32 type, KObject *object);
 
+KObject *get(Handle handle);
 KObject *getLast();
+
 KPort *getPort(const char *name);
 
 }
