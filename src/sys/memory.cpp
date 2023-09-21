@@ -34,6 +34,8 @@ std::array<u8 *, PAGE_NUM> readTable, writeTable;
 
 std::list<MemoryBlock> memoryBlockRecord;
 
+u64 usedMemorySize = 0;
+
 const char *getPermissionString(u32 permission) {
     switch (permission) {
         case MemoryPermission::R:
@@ -62,6 +64,10 @@ void init() {
     for (auto &i : writeTable) {
         i = NULL;
     }
+}
+
+u64 getUsedMemorySize() {
+    return usedMemorySize;
 }
 
 u8 read8(u64 vaddr) {
@@ -294,6 +300,14 @@ void *allocate(u64 baseAddress, u64 pageNum, u32 type, u32 attribute, u32 permis
 
             writeTable[writePage] = &((u8 *)memoryBlock.mem)[page * PAGE_SIZE];
         }
+    }
+
+    usedMemorySize += pageNum * PAGE_SIZE;
+
+    if (usedMemorySize > TOTAL_MEMORY_SIZE) {
+        PLOG_FATAL << "Ran out of memory";
+
+        exit(0);
     }
 
     memoryBlockRecord.push_back(memoryBlock);

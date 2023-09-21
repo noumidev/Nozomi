@@ -26,6 +26,8 @@ constexpr u64 PAGE_SHIFT = 12;
 constexpr u64 PAGE_SIZE = 1ULL << PAGE_SHIFT;
 constexpr u64 PAGE_MASK = PAGE_SIZE - 1;
 
+constexpr u64 TOTAL_MEMORY_SIZE = 1LLU << 32;
+
 namespace MemoryBase {
     enum : u64 {
         HomebrewEnv = 1ULL << 28,
@@ -74,6 +76,8 @@ inline bool isAligned(u64 n) {
 }
 
 void init();
+
+u64 getUsedMemorySize();
 
 u8 read8(u64 vaddr);
 u16 read16(u64 vaddr);
