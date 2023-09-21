@@ -19,6 +19,7 @@
 #include "emulator.hpp"
 
 #include "cpu.hpp"
+#include "kernel.hpp"
 #include "loader.hpp"
 #include "memory.hpp"
 
@@ -28,6 +29,7 @@ constexpr u64 CYCLES_PER_FRAME = cpu::CPU_CLOCK / 60;
 
 void init(const char *path) {
     cpu::init();
+    hle::kernel::init();
 
     // Load executable
     loader::load(path);
