@@ -167,6 +167,9 @@ void svcSetHeapSize() {
     }
 
     sys::memory::setHeapSize(size);
+
+    sys::cpu::set(0, Result::Success);
+    sys::cpu::set(1, sys::memory::MemoryBase::Heap);
 }
 
 }
