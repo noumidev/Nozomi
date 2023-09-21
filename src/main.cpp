@@ -21,7 +21,7 @@
 #include <plog/Formatters/FuncMessageFormatter.h>
 #include <plog/Appenders/ColorConsoleAppender.h>
 
-#include "sys/emulator.hpp"
+#include "emulator.hpp"
 
 int main(int argc, char **argv) {
     // Initialize logger

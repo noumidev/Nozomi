@@ -23,9 +23,9 @@
 
 #include <plog/Log.h>
 
+#include "cpu.hpp"
+#include "memory.hpp"
 #include "nro.hpp"
-#include "sys/cpu.hpp"
-#include "sys/memory.hpp"
 
 namespace loader {
 

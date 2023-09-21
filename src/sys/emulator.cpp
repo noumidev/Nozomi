@@ -18,9 +18,9 @@
 
 #include "emulator.hpp"
 
-#include "loader/loader.hpp"
-#include "sys/cpu.hpp"
-#include "sys/memory.hpp"
+#include "cpu.hpp"
+#include "loader.hpp"
+#include "memory.hpp"
 
 namespace sys::emulator {
 

@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "common/types.hpp"
+#include "types.hpp"
 
 namespace sys::cpu {
 
