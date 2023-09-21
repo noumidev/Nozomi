@@ -347,4 +347,18 @@ void *allocate(u64 baseAddress, u64 pageNum, u32 type, u32 attribute, u32 permis
     return memoryBlock.mem;
 }
 
+MemoryBlock queryMemory(u64 addr) {
+    PLOG_VERBOSE << "Querying memory (addr = " << std::hex << addr << ")";
+
+    for (const auto &memoryBlock : memoryBlockRecord) {
+        if ((addr >= memoryBlock.baseAddress) && (addr < (memoryBlock.baseAddress + PAGE_SIZE * memoryBlock.size))) {
+            return memoryBlock;
+        }
+    }
+
+    PLOG_VERBOSE << "Memory block does not exist";
+
+    return MemoryBlock{.baseAddress = 0, .size = 0, .type = 0, .attribute = 0, .permission = 0, .mem = NULL};
+}
+
 }
