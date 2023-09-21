@@ -35,6 +35,7 @@ int main(int argc, char **argv) {
     }
 
     sys::emulator::init(argv[1]);
+    sys::emulator::run();
 
     return 0;
 }
