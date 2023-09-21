@@ -30,18 +30,17 @@ namespace hle::kernel {
 
 std::vector<KObject> kernelObjects;
 
+// Handle->KObject maps
 std::map<Handle, KObject *> kernelObjectMap;
+std::map<Handle, KPort *> portMap;
 
 void init() {
-    // Make two dummy objects (0 = invalid handle, 1 = main thread handle)
-    (void)makeDummy();
-    (void)makeDummy();
-
-    (void)makeSession(makePort("sm:"));
+    (void)makePort("sm:");
 }
 
 Handle getNextHandle() {
-    static Handle handles = 0;
+    // 0 is an invalid handle, 1 is the main thread handle
+    static Handle handles = 2;
 
     return handles++;
 }
@@ -52,20 +51,6 @@ Handle getMainThreadHandle() {
 
 KObject *getLastObject() {
     return &kernelObjects[kernelObjects.size() - 1];
-}
-
-Handle makeDummy() {
-    kernelObjects.emplace_back(KDummy());
-
-    KDummy *dummy = (KDummy *)getLastObject();
-
-    const Handle handle = dummy->getHandle();
-
-    kernelObjectMap.insert(std::pair<Handle, KObject *>{handle, dummy});
-
-    PLOG_DEBUG << "Making KDummy (handle = " << std::hex << handle << ")";
-
-    return handle;
 }
 
 Handle makePort(const char *name) {

@@ -28,7 +28,6 @@ Handle getNextHandle();
 
 Handle getMainThreadHandle();
 
-Handle makeDummy();
 Handle makePort(const char *name);
 Handle makeSession(Handle portHandle);
 

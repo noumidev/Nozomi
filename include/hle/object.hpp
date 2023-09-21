@@ -48,13 +48,6 @@ public:
     }
 };
 
-class KDummy : public KObject {
-public:
-    KDummy() {}
-
-    ~KDummy() = default;
-};
-
 class KPort : public KObject {
     char name[KPORT_NAME_LENGTH];
 
