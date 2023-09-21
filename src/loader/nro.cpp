@@ -78,7 +78,7 @@ struct EnvContextEntry {
 // Dummy list of entries for NRO/homebrew
 constexpr EnvContextEntry envContextTable[] = {
     EnvContextEntry{.key = EnvContextKey::MainThreadHandle, .flags = 1, .value{1, 0}}, // Main thread handle = 1
-    EnvContextEntry{.key = EnvContextKey::AppletType, .flags = 1, .value{0, 0}},       // Applet type = Application
+    EnvContextEntry{.key = EnvContextKey::AppletType, .flags = 1, .value{0, 0}}, // Applet type = Application
     EnvContextEntry{.key = EnvContextKey::EndOfList, .flags = 1, .value{0, 0}},
 };
 
