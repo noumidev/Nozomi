@@ -27,5 +27,6 @@ namespace hle::service::sm {
 void handleRequest(u32 command, u32 *data, std::vector<u8> &output);
 
 void cmdGetServiceHandle(u32 *data, std::vector<u8> &output);
+void cmdRegisterClient(u32 *data, std::vector<u8> &output);
 
 }
