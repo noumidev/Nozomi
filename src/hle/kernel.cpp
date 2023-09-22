@@ -70,6 +70,26 @@ Handle makeSession(Handle portHandle) {
     return handle;
 }
 
+void destroyServiceSession(Handle handle) {
+    PLOG_DEBUG << "Destroying KServiceSession (handle = " << std::hex << handle.raw << ")";
+
+    KServiceSession *serviceSession = (KServiceSession *)table::remove(handle);
+
+    if (serviceSession->close()) {
+        delete serviceSession;
+    }
+}
+
+void destroySession(Handle handle) {
+    PLOG_DEBUG << "Destroying KSession (handle = " << std::hex << handle.raw << ")";
+
+    KSession *session = (KSession *)table::remove(handle);
+
+    if (session->close()) {
+        delete session;
+    }
+}
+
 KObject *getObject(Handle handle) {
     return table::get(handle);
 }
