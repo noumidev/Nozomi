@@ -136,23 +136,8 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
     PLOG_VERBOSE << "IPC header = " << std::hex << header.raw;
 
     if (header.type == CommandType::Close) {
-        switch (handle.type) {
-            case HandleType::KServiceSession:
-                PLOG_INFO << "Closing service session (handle = " << std::hex << handle.raw << ")";
-
-                kernel::destroyServiceSession(handle);
-                break;
-            case HandleType::KSession:
-                PLOG_INFO << "Closing session (handle = " << std::hex << handle.raw << ")";
-
-                kernel::destroySession(handle);
-                break;
-            default:
-                PLOG_FATAL << "Unimplemented handle type " << handle.type;
-
-                exit(0);
-        }
-
+        PLOG_INFO << "Closing service session (handle = " << std::hex << handle.raw << ")";
+        
         return;
     }
 
