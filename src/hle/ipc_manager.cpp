@@ -81,12 +81,22 @@ union Header {
     };
 };
 
+union HandleDescriptor {
+    u32 raw;
+    struct {
+        u32 sendPID : 1;
+        u32 numCopyHandles : 4;
+        u32 numMoveHandles : 4;
+        u32 : 23;
+    };
+};
+
 static_assert(sizeof(Header) == sizeof(u64));
 
 void sendSyncRequest(const char *name, u64 ipcMessage) {
     PLOG_INFO << "Sending sync request to " << name << " (IPC message* = " << std::hex << ipcMessage << ")";
 
-    u64 ipcSize = 8; // Header
+    u64 ipcSize = sizeof(u64); // Header
 
     Header header{.raw = sys::memory::read64(ipcMessage)};
 
@@ -111,9 +121,21 @@ void sendSyncRequest(const char *name, u64 ipcMessage) {
     }
 
     if (header.hasHandleDescriptor != 0) {
-        PLOG_FATAL << "Unimplemented handle descriptors";
+        HandleDescriptor handleDescriptor{.raw = sys::memory::read32(ipcMessage + ipcSize)};
+        ipcSize += sizeof(u32);
 
-        exit(0);
+        PLOG_VERBOSE << "Handle descriptor = " << std::hex << handleDescriptor.raw;
+
+        if (handleDescriptor.sendPID != 0) {
+            PLOG_VERBOSE << "PID = " << std::hex << sys::memory::read64(ipcMessage + ipcSize);
+            ipcSize += sizeof(u64);
+        }
+
+        if ((handleDescriptor.numCopyHandles | handleDescriptor.numMoveHandles) != 0) {
+            PLOG_FATAL << "Unimplemented copy/move handles";
+
+            exit(0);
+        }
     }
 
     // Get beginning of raw data
@@ -130,11 +152,6 @@ void sendSyncRequest(const char *name, u64 ipcMessage) {
     // Get data payload
     u32 data[header.dataSize];
     std::memcpy(data, sys::memory::getPointer(ipcMessage + ipcSize), dataSize);
-
-    for (u32 i = 0; i < header.dataSize; i++) {
-        std::printf("%08X ", data[i]);
-    }
-    std::printf("\n");
 
     // Confirm input header and write output header
     if (data[DataPayloadOffset::Magic] != INPUT_HEADER_MAGIC) {
@@ -177,7 +194,7 @@ void sendSyncRequest(const char *name, u64 ipcMessage) {
 
     // Write data payload and output to memory
     std::memcpy(sys::memory::getPointer(ipcMessage + ipcSize), data, dataSize);
-    std::memcpy(sys::memory::getPointer(ipcMessage + ipcSize + DataPayloadOffset::Output), output.data(), output.size());
+    std::memcpy(sys::memory::getPointer(ipcMessage + ipcSize + sizeof(u32) * DataPayloadOffset::Output), &output[0], output.size());
 }
 
 void handleControl(u32 command, u32 *data, std::vector<u8> &output) {
@@ -189,7 +206,7 @@ void handleControl(u32 command, u32 *data, std::vector<u8> &output) {
             PLOG_INFO << "QueryPointerBufferSize";
 
             output.resize(sizeof(u16));
-            std::memcpy(output.data(), &POINTER_BUFFER_SIZE, sizeof(u16));
+            std::memcpy(&output[0], &POINTER_BUFFER_SIZE, sizeof(u16));
             break;
         default:
             PLOG_FATAL << "Unimplemented command " << command;
