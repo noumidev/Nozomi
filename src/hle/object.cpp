@@ -71,6 +71,14 @@ const char *KPort::getName() {
     return name;
 }
 
+KServiceSession::KServiceSession(const char *name) : name(name) {}
+
+KServiceSession::~KServiceSession() {}
+
+const char *KServiceSession::getName() {
+    return this->name;
+}
+
 KSession::KSession(Handle portHandle) : portHandle(portHandle) {}
 
 KSession::~KSession() {}

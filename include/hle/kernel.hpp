@@ -28,6 +28,7 @@ void init();
 Handle getMainThreadHandle();
 
 Handle makePort(const char *name);
+Handle makeServiceSession(const char *name);
 Handle makeSession(Handle portHandle);
 
 KObject *getObject(Handle handle);

@@ -54,6 +54,16 @@ public:
     const char *getName();
 };
 
+class KServiceSession : public KObject {
+    const char *name; // Making this a pointer should be fine, service name pointers are constant
+
+public:
+    KServiceSession(const char *name);
+    ~KServiceSession();
+
+    const char *getName();
+};
+
 class KSession : public KObject {
     Handle portHandle;
 

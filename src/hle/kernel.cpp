@@ -50,6 +50,16 @@ Handle makePort(const char *name) {
     return handle;
 }
 
+Handle makeServiceSession(const char *name) {
+    const Handle handle = table::add(HandleType::KServiceSession, new KServiceSession(name));
+
+    ((KServiceSession *)table::getLast())->setHandle(handle);
+
+    PLOG_DEBUG << "Making KServiceSession (name = " << name << ", handle = " << std::hex << handle.raw << ")";
+
+    return handle;
+}
+
 Handle makeSession(Handle portHandle) {
     const Handle handle = table::add(HandleType::KSession, new KSession(portHandle));
 
