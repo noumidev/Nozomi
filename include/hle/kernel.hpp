@@ -34,6 +34,8 @@ Handle makeSession(Handle portHandle);
 void destroyServiceSession(Handle handle);
 void destroySession(Handle handle);
 
+void closeHandle(Handle handle);
+
 KObject *getObject(Handle handle);
 
 KPort *getPort(const char *name);

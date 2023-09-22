@@ -90,6 +90,16 @@ void destroySession(Handle handle) {
     }
 }
 
+void closeHandle(Handle handle) {
+    PLOG_DEBUG << "Closing handle " << std::hex << handle.raw;
+
+    KObject *object = table::remove(handle);
+
+    if (object->close()) {
+        delete object;
+    }
+}
+
 KObject *getObject(Handle handle) {
     return table::get(handle);
 }
