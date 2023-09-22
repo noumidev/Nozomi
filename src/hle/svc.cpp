@@ -26,6 +26,7 @@
 
 #include "cpu.hpp"
 #include "handle.hpp"
+#include "ipc_manager.hpp"
 #include "kernel.hpp"
 #include "memory.hpp"
 #include "object.hpp"
@@ -37,6 +38,7 @@ namespace SupervisorCall {
     enum : u32 {
         SetHeapSize = 0x01,
         QueryMemory = 0x06,
+        GetSystemTick = 0x1E,
         ConnectToNamedPort = 0x1F,
         SendSyncRequest = 0x21,
         OutputDebugString = 0x27,
@@ -71,6 +73,9 @@ void handleSVC(u32 svc) {
             break;
         case SupervisorCall::QueryMemory:
             svcQueryMemory();
+            break;
+        case SupervisorCall::GetSystemTick:
+            svcGetSystemTick();
             break;
         case SupervisorCall::ConnectToNamedPort:
             svcConnectToNamedPort();
@@ -228,6 +233,12 @@ void svcGetInfo() {
     }
 }
 
+void svcGetSystemTick() {
+    PLOG_INFO << "svcGetSystemTick";
+
+    sys::cpu::set(0, sys::cpu::getSystemTicks());
+}
+
 void svcOutputDebugString() {
     const u64 string = sys::cpu::get(0);
     const u64 size = sys::cpu::get(1);
@@ -269,9 +280,11 @@ void svcSendSyncRequest() {
 
     PLOG_INFO << "svcSendSyncRequest (session handle = " << std::hex << handle.raw << ")";
 
-    PLOG_FATAL << "Unimplemented svcSendSyncRequest";
+    KPort *port = (KPort *)kernel::getObject(((KSession *)kernel::getObject(handle))->getPortHandle());
 
-    exit(0);
+    ipc::sendSyncRequest(port->getName(), sys::cpu::getTLSAddr());
+
+    sys::cpu::set(0, Result::Success);
 }
 
 void svcSetHeapSize() {
