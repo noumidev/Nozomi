@@ -33,7 +33,9 @@
 namespace hle::service::sm {
 
 static std::map<u64, const char *> serviceNameMap {
-    {0x7672732d707366, "fsp-srv"},
+    {0x7672732D707366, "fsp-srv"},
+    {0x646968, "hid"},
+    {0x613A767264766E, "nvdrv:a"},
 };
 
 namespace Command {
@@ -79,7 +81,7 @@ void cmdGetServiceHandle(u32 *data, std::vector<u8> &output) {
     const Handle handle = kernel::makeServiceSession(serviceName);
 
     output.resize(sizeof(Handle));
-    std::memcpy(output.data(), &handle.raw, sizeof(Handle));
+    std::memcpy(&output[0], &handle.raw, sizeof(Handle));
 
     data[ipc::DataPayloadOffset::Result] = Result::Success;
 }
