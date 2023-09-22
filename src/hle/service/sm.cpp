@@ -36,10 +36,12 @@ static std::map<u64, const char *> serviceNameMap {
     {0x7672732D707366, "fsp-srv"},
     {0x646968, "hid"},
     {0x613A767264766E, "nvdrv:a"},
+    {0x7379733a746573, "set:sys"},
 };
 
 namespace Command {
     enum : u32 {
+        RegisterClient = 0,
         GetServiceHandle = 1,
     };
 }
@@ -57,6 +59,9 @@ const char *getServiceName(u64 service) {
 
 void handleRequest(u32 command, u32 *data, std::vector<u8> &output) {
     switch (command) {
+        case Command::RegisterClient:
+            cmdRegisterClient(data, output);
+            break;
         case Command::GetServiceHandle:
             cmdGetServiceHandle(data, output);
             break;
@@ -68,8 +73,6 @@ void handleRequest(u32 command, u32 *data, std::vector<u8> &output) {
 }
 
 void cmdGetServiceHandle(u32 *data, std::vector<u8> &output) {
-    (void)output;
-
     u64 service;
     std::memcpy(&service, &data[ipc::DataPayloadOffset::Parameters], sizeof(u64));
 
@@ -82,6 +85,17 @@ void cmdGetServiceHandle(u32 *data, std::vector<u8> &output) {
 
     output.resize(sizeof(Handle));
     std::memcpy(&output[0], &handle.raw, sizeof(Handle));
+
+    data[ipc::DataPayloadOffset::Result] = Result::Success;
+}
+
+void cmdRegisterClient(u32 *data, std::vector<u8> &output) {
+    (void)output;
+
+    u64 input;
+    std::memcpy(&input, &data[ipc::DataPayloadOffset::Parameters], sizeof(u64));
+
+    PLOG_INFO << "cmdRegisterClient (input = " << std::hex << input << ")";
 
     data[ipc::DataPayloadOffset::Result] = Result::Success;
 }
