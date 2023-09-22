@@ -39,6 +39,8 @@
 
 namespace hle::ipc {
 
+using ServiceFunction = void(*)(u32, u32 *, std::vector<u8> &);
+
 constexpr u32 makeMagic(const char *magic) {
     return (u32)magic[0] | ((u32)magic[1] << 8) | ((u32)magic[2] << 16) | ((u32)magic[3] << 24);
 }
@@ -49,7 +51,7 @@ constexpr u64 TOTAL_PADDING = 16;
 constexpr u32 INPUT_HEADER_MAGIC = makeMagic("SFCI");
 constexpr u32 OUTPUT_HEADER_MAGIC = makeMagic("SFCO");
 
-static std::map<std::string, void (*)(u32, u32 *, std::vector<u8> &)> requestFuncMap {
+static std::map<std::string, ServiceFunction> requestFuncMap {
     {std::string("apm"), &service::apm::handleRequest},
     {std::string("set:sys"), &service::set_sys::handleRequest},
     {std::string("sm:"), &service::sm::handleRequest},
