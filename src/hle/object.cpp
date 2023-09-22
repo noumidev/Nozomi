@@ -25,6 +25,18 @@
 
 namespace hle {
 
+KDomain::KDomain() : isDomain(false) {}
+
+KDomain::~KDomain() {}
+
+void KDomain::makeDomain() {
+    isDomain = true;
+}
+
+void KDomain::add(Handle handle) {
+    domainHandles.push_back(handle);
+}
+
 KObject::KObject() : handle(Handle{.raw = 0}), refCount(0) {
     open();
 }

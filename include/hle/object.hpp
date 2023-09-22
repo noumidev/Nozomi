@@ -18,12 +18,30 @@
 
 #pragma once
 
+#include <vector>
+
 #include "handle.hpp"
 #include "types.hpp"
 
 namespace hle {
 
 constexpr int KPORT_NAME_LENGTH = 16;
+
+// Base class for domain objects
+class KDomain {
+protected:
+    bool isDomain;
+
+    std::vector<Handle> domainHandles;
+
+public:
+    KDomain();
+    virtual ~KDomain();
+
+    void makeDomain();
+
+    void add(Handle handle);
+};
 
 // Kernel object base class
 class KObject {
@@ -54,7 +72,7 @@ public:
     const char *getName();
 };
 
-class KServiceSession : public KObject {
+class KServiceSession : public KObject, public KDomain {
     const char *name; // Making this a pointer should be fine, service name pointers are constant
 
 public:
