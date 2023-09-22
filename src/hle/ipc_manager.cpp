@@ -33,6 +33,7 @@
 #include "object.hpp"
 #include "result.hpp"
 
+#include "apm.hpp"
 #include "set_sys.hpp"
 #include "sm.hpp"
 
@@ -49,6 +50,7 @@ constexpr u32 INPUT_HEADER_MAGIC = makeMagic("SFCI");
 constexpr u32 OUTPUT_HEADER_MAGIC = makeMagic("SFCO");
 
 static std::map<std::string, void (*)(u32, u32 *, std::vector<u8> &)> requestFuncMap {
+    {std::string("apm"), &service::apm::handleRequest},
     {std::string("set:sys"), &service::set_sys::handleRequest},
     {std::string("sm:"), &service::sm::handleRequest},
 };
@@ -68,6 +70,7 @@ namespace CommandType {
 
 namespace Command {
     enum : u32 {
+        ConvertCurrentObjectToDomain = 0,
         QueryPointerBufferSize = 3,
     };
 }
@@ -111,15 +114,19 @@ union CBufferDescriptor {
 
 static_assert(sizeof(CBufferDescriptor) == sizeof(u64));
 
+KObject *context;
+
 void sendSyncRequest(Handle handle, u64 ipcMessage) {
+    context = kernel::getObject(handle);
+
     // Get service name from handle
     const char *name;
     switch (handle.type) {
         case HandleType::KServiceSession:
-            name = ((KServiceSession *)kernel::getObject(handle))->getName();
+            name = ((KServiceSession *)context)->getName();
             break;
         case HandleType::KSession:
-            name = ((KPort *)kernel::getObject(((KSession *)kernel::getObject(handle))->getPortHandle()))->getName();
+            name = ((KPort *)kernel::getObject(((KSession *)context)->getPortHandle()))->getName();
             break;
         default:
             PLOG_FATAL << "Unimplemented handle type " << handle.type;
@@ -128,6 +135,11 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
     }
 
     PLOG_INFO << "Sending sync request to " << name << " (IPC message* = " << std::hex << ipcMessage << ")";
+
+    for (int i = 0; i < 32; i++) {
+        std::printf("%08X ", sys::memory::read32(ipcMessage + sizeof(u32) * i));
+    }
+    std::puts("");
 
     IPCBuffer ipcBuffer(ipcMessage);
 
@@ -156,11 +168,7 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
             PLOG_VERBOSE << "PID = " << std::hex << ipcBuffer.read<u32>();
         }
 
-        if ((handleDescriptor.numCopyHandles | handleDescriptor.numMoveHandles) != 0) {
-            PLOG_FATAL << "Unimplemented copy/move handles";
-
-            exit(0);
-        }
+        ipcBuffer.advance(sizeof(Handle) * (handleDescriptor.numCopyHandles + handleDescriptor.numMoveHandles));
     }
 
     // Get beginning of raw data
@@ -265,6 +273,27 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
 
 void handleControl(u32 command, u32 *data, std::vector<u8> &output) {
     switch (command) {
+        case Command::ConvertCurrentObjectToDomain:
+            {
+                PLOG_INFO << "ConvertCurrentObjectToDomain";
+                
+                if (context->getHandle().type != HandleType::KServiceSession) {
+                    PLOG_FATAL << "Cannot convert current object to domain";
+
+                    exit(0);
+                }
+
+                KServiceSession *serviceSession = (KServiceSession *)context;
+
+                serviceSession->makeDomain();
+                serviceSession->add(serviceSession->getHandle());
+
+                const u32 objectID = 0; // Is always 0?
+
+                output.resize(sizeof(u32));
+                std::memcpy(&output[0], &objectID, sizeof(u32));
+            }
+            break;
         case Command::QueryPointerBufferSize:
             PLOG_INFO << "QueryPointerBufferSize";
 
