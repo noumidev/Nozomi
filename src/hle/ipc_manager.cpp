@@ -264,9 +264,6 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
 }
 
 void handleControl(u32 command, u32 *data, std::vector<u8> &output) {
-    (void)data;
-    (void)output;
-
     switch (command) {
         case Command::QueryPointerBufferSize:
             PLOG_INFO << "QueryPointerBufferSize";
