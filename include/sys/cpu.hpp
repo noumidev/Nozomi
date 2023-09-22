@@ -30,6 +30,8 @@ void run(u64 ticks);
 
 void addTicks(u64 ticks);
 
+u64 getSystemTicks();
+
 u64 get(int idx);
 u64 getTLSAddr();
 

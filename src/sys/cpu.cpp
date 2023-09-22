@@ -208,6 +208,10 @@ void addTicks(u64 ticks) {
     env.totalTicks += ticks;
 }
 
+u64 getSystemTicks() {
+    return env.totalTicks / 100; // Bad approximation
+}
+
 u64 get(int idx) {
     return jit->GetRegister(idx);
 }
