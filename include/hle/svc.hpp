@@ -24,6 +24,7 @@ namespace hle::svc {
 
 void handleSVC(u32 svc);
 
+void svcCloseHandle();
 void svcConnectToNamedPort();
 void svcGetInfo();
 void svcGetSystemTick();

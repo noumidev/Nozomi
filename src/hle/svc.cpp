@@ -38,6 +38,7 @@ namespace SupervisorCall {
     enum : u32 {
         SetHeapSize = 0x01,
         QueryMemory = 0x06,
+        CloseHandle = 0x16,
         GetSystemTick = 0x1E,
         ConnectToNamedPort = 0x1F,
         SendSyncRequest = 0x21,
@@ -74,6 +75,9 @@ void handleSVC(u32 svc) {
         case SupervisorCall::QueryMemory:
             svcQueryMemory();
             break;
+        case SupervisorCall::CloseHandle:
+            svcCloseHandle();
+            break;
         case SupervisorCall::GetSystemTick:
             svcGetSystemTick();
             break;
@@ -94,6 +98,16 @@ void handleSVC(u32 svc) {
 
             exit(0);
     }
+}
+
+void svcCloseHandle() {
+    const Handle handle = hle::makeHandle((u32)sys::cpu::get(0));
+
+    PLOG_INFO << "svcCloseHandle (handle = " << std::hex << handle.raw << ")";
+
+    kernel::closeHandle(handle);
+
+    sys::cpu::set(0, Result::Success);
 }
 
 void svcConnectToNamedPort() {
