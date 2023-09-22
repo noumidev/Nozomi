@@ -33,6 +33,7 @@
 namespace hle::service::sm {
 
 static std::map<u64, const char *> serviceNameMap {
+    {0x6d7061, "apm"},
     {0x7672732D707366, "fsp-srv"},
     {0x646968, "hid"},
     {0x613A767264766E, "nvdrv:a"},
