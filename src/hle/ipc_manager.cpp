@@ -127,8 +127,8 @@ void sendSyncRequest(const char *name, u64 ipcMessage) {
         PLOG_VERBOSE << "Handle descriptor = " << std::hex << handleDescriptor.raw;
 
         if (handleDescriptor.sendPID != 0) {
-            PLOG_VERBOSE << "PID = " << std::hex << sys::memory::read64(ipcMessage + ipcSize);
-            ipcSize += sizeof(u64);
+            PLOG_VERBOSE << "PID = " << std::hex << sys::memory::read32(ipcMessage + ipcSize);
+            ipcSize += sizeof(u32);
         }
 
         if ((handleDescriptor.numCopyHandles | handleDescriptor.numMoveHandles) != 0) {
