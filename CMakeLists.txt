@@ -18,6 +18,7 @@ project(Nozomi CXX)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include/common)
 include_directories(${PROJECT_SOURCE_DIR}/include/hle)
+include_directories(${PROJECT_SOURCE_DIR}/include/hle/service)
 include_directories(${PROJECT_SOURCE_DIR}/include/loader)
 include_directories(${PROJECT_SOURCE_DIR}/include/sys)
 include_directories(${PROJECT_SOURCE_DIR}/external/dynarmic)
@@ -33,9 +34,11 @@ set(DYNARMIC_FRONTENDS "A64")
 set(SOURCES
     src/main.cpp
     src/hle/handle_table.cpp
+    src/hle/ipc_manager.cpp
     src/hle/kernel.cpp
     src/hle/object.cpp
     src/hle/svc.cpp
+    src/hle/service/sm.cpp
     src/loader/loader.cpp
     src/loader/nro.cpp
     src/sys/cpu.cpp
@@ -48,10 +51,12 @@ set(HEADERS
     include/common/types.hpp
     include/hle/handle.hpp
     include/hle/handle_table.hpp
+    include/hle/ipc_manager.hpp
     include/hle/kernel.hpp
     include/hle/object.hpp
     include/hle/result.hpp
     include/hle/svc.hpp
+    include/hle/service/sm.hpp
     include/loader/loader.hpp
     include/loader/nro.hpp
     include/sys/cpu.hpp
