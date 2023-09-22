@@ -20,6 +20,7 @@
 
 #include <vector>
 
+#include "handle.hpp"
 #include "types.hpp"
 
 namespace hle::ipc {
@@ -36,7 +37,7 @@ namespace DataPayloadOffset {
     };
 }
 
-void sendSyncRequest(const char *name, u64 ipcMessage);
+void sendSyncRequest(Handle handle, u64 ipcMessage);
 
 void handleControl(u32 command, u32 *data, std::vector<u8> &output);
 

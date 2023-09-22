@@ -18,6 +18,7 @@
 
 #include "ipc_manager.hpp"
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <ios>
@@ -26,9 +27,13 @@
 
 #include <plog/Log.h>
 
+#include "ipc_buffer.hpp"
+#include "kernel.hpp"
 #include "memory.hpp"
+#include "object.hpp"
 #include "result.hpp"
 
+#include "set_sys.hpp"
 #include "sm.hpp"
 
 namespace hle::ipc {
@@ -44,6 +49,7 @@ constexpr u32 INPUT_HEADER_MAGIC = makeMagic("SFCI");
 constexpr u32 OUTPUT_HEADER_MAGIC = makeMagic("SFCO");
 
 static std::map<std::string, void (*)(u32, u32 *, std::vector<u8> &)> requestFuncMap {
+    {std::string("set:sys"), &service::set_sys::handleRequest},
     {std::string("sm:"), &service::sm::handleRequest},
 };
 
@@ -81,6 +87,8 @@ union Header {
     };
 };
 
+static_assert(sizeof(Header) == sizeof(u64));
+
 union HandleDescriptor {
     u32 raw;
     struct {
@@ -91,21 +99,61 @@ union HandleDescriptor {
     };
 };
 
-static_assert(sizeof(Header) == sizeof(u64));
+static_assert(sizeof(HandleDescriptor) == sizeof(u32));
 
-void sendSyncRequest(const char *name, u64 ipcMessage) {
+union CBufferDescriptor {
+    u64 raw;
+    struct {
+        u64 address : 48;
+        u64 size : 16;
+    };
+};
+
+static_assert(sizeof(CBufferDescriptor) == sizeof(u64));
+
+void sendSyncRequest(Handle handle, u64 ipcMessage) {
+    // Get service name from handle
+    const char *name;
+    switch (handle.type) {
+        case HandleType::KServiceSession:
+            name = ((KServiceSession *)kernel::getObject(handle))->getName();
+            break;
+        case HandleType::KSession:
+            name = ((KPort *)kernel::getObject(((KSession *)kernel::getObject(handle))->getPortHandle()))->getName();
+            break;
+        default:
+            PLOG_FATAL << "Unimplemented handle type " << handle.type;
+
+            exit(0);
+    }
+
     PLOG_INFO << "Sending sync request to " << name << " (IPC message* = " << std::hex << ipcMessage << ")";
 
-    u64 ipcSize = sizeof(u64); // Header
+    IPCBuffer ipcBuffer(ipcMessage);
 
-    Header header{.raw = sys::memory::read64(ipcMessage)};
+    Header header{.raw = ipcBuffer.read<u64>()};
 
     PLOG_VERBOSE << "IPC header = " << std::hex << header.raw;
 
     if (header.type == CommandType::Close) {
-        PLOG_FATAL << "Unimplemented Close";
+        switch (handle.type) {
+            case HandleType::KServiceSession:
+                PLOG_INFO << "Closing service session (handle = " << std::hex << handle.raw << ")";
 
-        exit(0);
+                kernel::destroyServiceSession(handle);
+                break;
+            case HandleType::KSession:
+                PLOG_INFO << "Closing session (handle = " << std::hex << handle.raw << ")";
+
+                kernel::destroySession(handle);
+                break;
+            default:
+                PLOG_FATAL << "Unimplemented handle type " << handle.type;
+
+                exit(0);
+        }
+
+        return;
     }
 
     if ((header.numX | header.numA | header.numB | header.numW) != 0) {
@@ -114,21 +162,13 @@ void sendSyncRequest(const char *name, u64 ipcMessage) {
         exit(0);
     }
 
-    if (header.flagsC != 0) {
-        PLOG_FATAL << "Unimplemented C buffer descriptor";
-
-        exit(0);
-    }
-
     if (header.hasHandleDescriptor != 0) {
-        HandleDescriptor handleDescriptor{.raw = sys::memory::read32(ipcMessage + ipcSize)};
-        ipcSize += sizeof(u32);
+        HandleDescriptor handleDescriptor{.raw = ipcBuffer.read<u32>()};
 
         PLOG_VERBOSE << "Handle descriptor = " << std::hex << handleDescriptor.raw;
 
         if (handleDescriptor.sendPID != 0) {
-            PLOG_VERBOSE << "PID = " << std::hex << sys::memory::read32(ipcMessage + ipcSize);
-            ipcSize += sizeof(u32);
+            PLOG_VERBOSE << "PID = " << std::hex << ipcBuffer.read<u32>();
         }
 
         if ((handleDescriptor.numCopyHandles | handleDescriptor.numMoveHandles) != 0) {
@@ -140,10 +180,11 @@ void sendSyncRequest(const char *name, u64 ipcMessage) {
 
     // Get beginning of raw data
     u64 padding = TOTAL_PADDING;
-    u64 alignment = padding - (ipcSize & 15);
+    u64 alignment = padding - (ipcBuffer.getOffset() & 15);
 
     if (alignment != 0) {
-        ipcSize += alignment;
+        ipcBuffer.advance(alignment);
+
         padding -= alignment;
     }
 
@@ -151,7 +192,7 @@ void sendSyncRequest(const char *name, u64 ipcMessage) {
 
     // Get data payload
     u32 data[header.dataSize];
-    std::memcpy(data, sys::memory::getPointer(ipcMessage + ipcSize), dataSize);
+    std::memcpy(data, ipcBuffer.get(), dataSize);
 
     // Confirm input header and write output header
     if (data[DataPayloadOffset::Magic] != INPUT_HEADER_MAGIC) {
@@ -192,9 +233,49 @@ void sendSyncRequest(const char *name, u64 ipcMessage) {
             exit(0);
     }
 
-    // Write data payload and output to memory
-    std::memcpy(sys::memory::getPointer(ipcMessage + ipcSize), data, dataSize);
-    std::memcpy(sys::memory::getPointer(ipcMessage + ipcSize + sizeof(u32) * DataPayloadOffset::Output), &output[0], output.size());
+    // Write data payload to memory
+    std::memcpy(ipcBuffer.get(), data, dataSize);
+
+    // Skip over data payload
+    ipcBuffer.advance(dataSize + padding);
+
+    // Write output to memory
+    switch (header.flagsC) {
+        case 0: // No C buffer (data goes after header??)
+            ipcBuffer.setOffset(sizeof(Header));
+        case 1: // Inlined C buffer
+            std::memcpy(ipcBuffer.get(), &output[0], output.size());
+            return;
+        case 2: // ?
+            PLOG_FATAL << "No C buffers to write output to";
+
+            exit(0);
+        default:
+            break;
+    }
+
+    const u64 numC = header.flagsC - 2;
+
+    PLOG_VERBOSE << "Number of C buffers = " << numC;
+    
+    CBufferDescriptor descriptors[numC];
+
+    // Note: if I follow the information in https://switchbrew.org/wiki/IPC_Marshalling,
+    // the C buffer descriptors are all empty because they reside in the data payload (which gets skipped over).
+    // TODO: figure out how to get it working without doing this:
+    ipcBuffer.retire(16);
+
+    for (u64 i = 0; i < numC; i++) {
+        auto &descriptor = descriptors[i];
+
+        descriptor = CBufferDescriptor{.raw = ipcBuffer.read<u64>()};
+
+        PLOG_VERBOSE << "C buffer descriptor (num = " << i << ", addr = " << std::hex << descriptor.address << ", size = " << descriptor.size << ")";
+    }
+
+    const auto &descriptor = descriptors[0];
+    
+    std::memcpy(sys::memory::getPointer(descriptor.address), &output[0], std::min(descriptor.size, (u64)output.size()));
 }
 
 void handleControl(u32 command, u32 *data, std::vector<u8> &output) {
