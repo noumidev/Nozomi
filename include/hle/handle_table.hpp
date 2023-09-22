@@ -27,6 +27,7 @@ namespace hle::kernel::table {
 void init();
 
 Handle add(u32 type, KObject *object);
+KObject *remove(Handle handle);
 
 KObject *get(Handle handle);
 KObject *getLast();

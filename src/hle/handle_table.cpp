@@ -74,12 +74,37 @@ Handle add(u32 type, KObject *object) {
 
     Handle handle{.index = getNextIndex(), .type = type};
 
-    handleTable[handle.index].type = type;
-    handleTable[handle.index].object = object;
+    auto &entry = handleTable[handle.index];
+
+    entry.type = type;
+    entry.object = object;
 
     handleCount++;
 
     return handle;
+}
+
+KObject *remove(Handle handle) {
+    if ((handle.type == HandleType::None) || (handle.type >= HandleType::NumHandleTypes)) {
+        PLOG_FATAL << "Invalid type";
+
+        exit(0);
+    }
+
+    if (handle.index >= nextIndex) {
+        PLOG_FATAL << "Invalid index";
+
+        exit(0);
+    }
+
+    auto &entry = handleTable[handle.index];
+
+    KObject *object = entry.object;
+
+    entry.type = HandleType::None;
+    entry.object = NULL;
+
+    return object;
 }
 
 KObject *get(Handle handle) {
