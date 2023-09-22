@@ -51,9 +51,6 @@ namespace FirmwareVersion {
 }
 
 void handleRequest(u32 command, u32 *data, std::vector<u8> &output) {
-    (void)data;
-    (void)output;
-
     switch (command) {
         case Command::GetFirmwareVersion:
             cmdGetFirmwareVersion(data, output);
