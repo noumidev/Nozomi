@@ -39,6 +39,8 @@ set(SOURCES
     src/hle/kernel.cpp
     src/hle/object.cpp
     src/hle/svc.cpp
+    src/hle/service/apm.cpp
+    src/hle/service/applet_oe.cpp
     src/hle/service/set_sys.cpp
     src/hle/service/sm.cpp
     src/loader/loader.cpp
@@ -59,6 +61,8 @@ set(HEADERS
     include/hle/object.hpp
     include/hle/result.hpp
     include/hle/svc.hpp
+    include/hle/service/apm.hpp
+    include/hle/service/applet_oe.hpp
     include/hle/service/set_sys.hpp
     include/hle/service/sm.hpp
     include/loader/loader.hpp
