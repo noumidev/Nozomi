@@ -280,18 +280,7 @@ void svcSendSyncRequest() {
 
     PLOG_INFO << "svcSendSyncRequest (session handle = " << std::hex << handle.raw << ")";
 
-    switch (handle.type) {
-        case HandleType::KServiceSession:
-            ipc::sendSyncRequest(((KServiceSession *)kernel::getObject(handle))->getName(), sys::cpu::getTLSAddr());
-            break;
-        case HandleType::KSession:
-            ipc::sendSyncRequest(((KPort *)kernel::getObject(((KSession *)kernel::getObject(handle))->getPortHandle()))->getName(), sys::cpu::getTLSAddr());
-            break;
-        default:
-            PLOG_FATAL << "Unimplemented handle type " << handle.type;
-
-            exit(0);
-    }
+    ipc::sendSyncRequest(handle, sys::cpu::getTLSAddr());
 
     sys::cpu::set(0, Result::Success);
 }
