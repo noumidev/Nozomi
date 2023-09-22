@@ -18,8 +18,6 @@
 
 #include "ipc_buffer.hpp"
 
-#include <cstring>
-
 #include "memory.hpp"
 
 namespace hle {
@@ -47,14 +45,8 @@ void IPCBuffer::advance(u64 offset) {
     this->offset += offset;
 }
 
-template<typename T>
-T IPCBuffer::read() {
-    T data;
-    std::memcpy(&data, get(), sizeof(T));
-
-    advance(sizeof(T));
-
-    return data;
+void IPCBuffer::retire(u64 offset) {
+    this->offset -= offset;
 }
 
 }

@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <cstring>
+
 #include "types.hpp"
 
 namespace hle {
@@ -30,10 +32,19 @@ struct IPCBuffer {
     u64 getOffset();
 
     void setOffset(u64 offset);
+
     void advance(u64 offset);
+    void retire(u64 offset);
 
     template<typename T>
-    T read();
+    T read() {
+        T data;
+        std::memcpy(&data, get(), sizeof(T));
+
+        advance(sizeof(T));
+
+        return data;
+    }
 
 private:
     void *ipcPointer;
