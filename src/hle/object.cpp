@@ -32,7 +32,7 @@ KObject::KObject() : handle(Handle{.raw = 0}), refCount(0) {
 KObject::~KObject() {}
 
 Handle KObject::getHandle() {
-    return this->handle;
+    return handle;
 }
 
 void KObject::setHandle(Handle handle) {
@@ -76,7 +76,7 @@ KServiceSession::KServiceSession(const char *name) : name(name) {}
 KServiceSession::~KServiceSession() {}
 
 const char *KServiceSession::getName() {
-    return this->name;
+    return name;
 }
 
 KSession::KSession(Handle portHandle) : portHandle(portHandle) {}
@@ -84,7 +84,7 @@ KSession::KSession(Handle portHandle) : portHandle(portHandle) {}
 KSession::~KSession() {}
 
 Handle KSession::getPortHandle() {
-    return this->portHandle;
+    return portHandle;
 }
 
 }
