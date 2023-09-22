@@ -239,7 +239,7 @@ void write16(u64 vaddr, u16 data) {
 
 void write32(u64 vaddr, u32 data) {
     if (vaddr > (MemoryBase::AddressSpace - sizeof(u32))) {
-        PLOG_FATAL << "Write16 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
+        PLOG_FATAL << "Write32 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
 
         exit(0);
     }
@@ -260,7 +260,7 @@ void write32(u64 vaddr, u32 data) {
 
 void write64(u64 vaddr, u64 data) {
     if (vaddr > (MemoryBase::AddressSpace - sizeof(u64))) {
-        PLOG_FATAL << "Write16 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
+        PLOG_FATAL << "Write64 address outside of address space bounds (addr = " << std::hex << vaddr << ")";
 
         exit(0);
     }
