@@ -23,7 +23,6 @@
 
 #include <plog/Log.h>
 
-#include "ipc_manager.hpp"
 #include "result.hpp"
 
 namespace hle::service::set_sys {

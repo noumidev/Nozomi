@@ -26,7 +26,6 @@
 #include <plog/Log.h>
 
 #include "handle.hpp"
-#include "ipc_manager.hpp"
 #include "kernel.hpp"
 #include "result.hpp"
 
