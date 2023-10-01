@@ -65,6 +65,12 @@ public:
     bool close();
 };
 
+class KEvent : public KObject {
+public:
+    KEvent(bool autoClear);
+    ~KEvent();
+};
+
 // Service base class (system services don't use this)
 class KService : public KObject {
 public:

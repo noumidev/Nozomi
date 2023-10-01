@@ -71,6 +71,12 @@ bool KObject::close() {
     return refCount <= 0;
 }
 
+KEvent::KEvent(bool autoClear) {
+    (void)autoClear;
+}
+
+KEvent::~KEvent() {}
+
 KService::KService() {}
 
 KService::~KService() {}

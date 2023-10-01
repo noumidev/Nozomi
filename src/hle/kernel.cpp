@@ -35,6 +35,16 @@ Handle getMainThreadHandle() {
     return Handle{.index = 1, .type = HandleType::KThread};
 }
 
+Handle makeEvent(bool autoClear) {
+    const Handle handle = table::add(HandleType::KEvent, new KEvent(autoClear));
+
+    ((KEvent *)table::getLast())->setHandle(handle);
+
+    PLOG_DEBUG << "Making KEvent (auto clear = " << autoClear << ", handle = " << std::hex << handle.raw << ")";
+
+    return handle;
+}
+
 Handle makePort(const char *name) {
     const Handle handle = table::add(HandleType::KPort, new KPort(name));
 

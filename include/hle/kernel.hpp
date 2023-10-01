@@ -32,6 +32,7 @@ void init();
 
 Handle getMainThreadHandle();
 
+Handle makeEvent(bool autoClear);
 Handle makePort(const char *name);
 Handle makeServiceSession(const char *name);
 Handle makeSession(Handle portHandle);

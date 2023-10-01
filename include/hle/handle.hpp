@@ -34,6 +34,7 @@ union Handle {
 namespace HandleType {
     enum : u32 {
         None,
+        KEvent,
         KPort,
         KService,
         KServiceSession,
