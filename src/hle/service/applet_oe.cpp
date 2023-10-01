@@ -518,7 +518,7 @@ Result WindowController::cmdGetAppletResourceUserId(u32 *data, IPCReply &reply) 
 
     PLOG_INFO << "GetAppletResourceUserId (stubbed)";
 
-    reply.write(0); // ??
+    reply.write(0ULL); // ??
 
     return KernelResult::Success;
 }
