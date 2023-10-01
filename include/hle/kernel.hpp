@@ -18,7 +18,12 @@
 
 #pragma once
 
+#include <ios>
+
+#include <plog/Log.h>
+
 #include "handle.hpp"
+#include "handle_table.hpp"
 #include "object.hpp"
 
 namespace hle::kernel {
@@ -30,6 +35,25 @@ Handle getMainThreadHandle();
 Handle makePort(const char *name);
 Handle makeServiceSession(const char *name);
 Handle makeSession(Handle portHandle);
+
+template<typename T>
+Handle makeService() {
+    const Handle handle = table::add(HandleType::KService, new T());
+
+    KService *service = dynamic_cast<KService *>(table::getLast());
+
+    if (service == NULL) {
+        PLOG_FATAL << "Invalid service type";
+
+        exit(0);
+    }
+
+    service->setHandle(handle);
+
+    PLOG_DEBUG << "Making KService (name = " << service->getName() << ", handle = " << std::hex << service->getHandle().raw << ")";
+
+    return handle;
+}
 
 void destroyServiceSession(Handle handle);
 void destroySession(Handle handle);

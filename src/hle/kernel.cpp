@@ -18,14 +18,9 @@
 
 #include "kernel.hpp"
 
-#include <ios>
 #include <map>
 #include <type_traits>
 #include <utility>
-
-#include <plog/Log.h>
-
-#include "handle_table.hpp"
 
 namespace hle::kernel {
 

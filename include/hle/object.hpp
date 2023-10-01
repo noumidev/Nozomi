@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "handle.hpp"
+#include "ipc_reply.hpp"
 #include "types.hpp"
 
 namespace hle {
@@ -62,6 +63,17 @@ public:
 
     void open();
     bool close();
+};
+
+// Service base class (system services don't use this)
+class KService : public KObject {
+public:
+    KService();
+    virtual ~KService();
+
+    virtual const char *getName();
+
+    virtual Result handleRequest(u32 command, u32 *data, IPCReply &reply);
 };
 
 class KPort : public KObject {

@@ -35,6 +35,7 @@ namespace HandleType {
     enum : u32 {
         None,
         KPort,
+        KService,
         KServiceSession,
         KSession,
         KThread, // Does not exist yet

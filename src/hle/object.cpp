@@ -71,6 +71,24 @@ bool KObject::close() {
     return refCount <= 0;
 }
 
+KService::KService() {}
+
+KService::~KService() {}
+
+const char *KService::getName() {
+    return "Invalid service";
+}
+
+Result KService::handleRequest(u32 command, u32 *data, IPCReply &reply) {
+    (void)command;
+    (void)data;
+    (void)reply;
+
+    PLOG_FATAL << "handleRequest not overriden";
+
+    exit(0);
+}
+
 KPort::KPort(const char *name) {
     std::strncpy(this->name, name, KPORT_NAME_LENGTH);
 
