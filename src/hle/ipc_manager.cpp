@@ -28,6 +28,7 @@
 #include <plog/Log.h>
 
 #include "ipc_buffer.hpp"
+#include "ipc_reply.hpp"
 #include "kernel.hpp"
 #include "memory.hpp"
 #include "object.hpp"
@@ -39,14 +40,13 @@
 
 namespace hle::ipc {
 
-using ServiceFunction = void(*)(u32, u32 *, std::vector<u8> &);
+using ServiceFunction = Result(*)(u32, u32 *, IPCReply &);
 
 constexpr u32 makeMagic(const char *magic) {
     return (u32)magic[0] | ((u32)magic[1] << 8) | ((u32)magic[2] << 16) | ((u32)magic[3] << 24);
 }
 
-constexpr u16 POINTER_BUFFER_SIZE = 8;
-constexpr u64 TOTAL_PADDING = 16;
+constexpr u16 POINTER_BUFFER_SIZE = 0x8000; // Value taken from Yuzu
 
 constexpr u32 INPUT_HEADER_MAGIC = makeMagic("SFCI");
 constexpr u32 OUTPUT_HEADER_MAGIC = makeMagic("SFCO");
@@ -118,6 +118,44 @@ static_assert(sizeof(CBufferDescriptor) == sizeof(u64));
 
 KObject *context;
 
+bool isDomain() {
+    KDomain *domain = dynamic_cast<KDomain *>(context);
+
+    if (domain == NULL) {
+        return false;
+    }
+
+    return domain->isDomainObject();
+}
+
+void writeOutputHeader(u32 *data, Result result) {
+    data[DataPayloadOffset::Magic] = OUTPUT_HEADER_MAGIC;
+    data[DataPayloadOffset::Version] = 0;
+    data[DataPayloadOffset::Result] = result;
+}
+
+void writeCBuffer(IPCBuffer &ipcBuffer, IPCReply &reply, u64 numC) {
+    if (numC == 0) {
+        PLOG_FATAL << "Invalid number of C buffer descriptors";
+
+        exit(0);
+    }
+
+    CBufferDescriptor descriptors[numC];
+
+    for (u64 i = 0; i < numC; i++) {
+        auto &descriptor = descriptors[i];
+
+        descriptor = CBufferDescriptor{.raw = ipcBuffer.read<u64>()};
+
+        PLOG_VERBOSE << "C buffer descriptor (num = " << i << ", addr = " << std::hex << descriptor.address << ", size = " << descriptor.size << ")";
+    }
+
+    const auto &descriptor = descriptors[0];
+    
+    std::memcpy(sys::memory::getPointer(descriptor.address), reply.get(), std::min(descriptor.size, reply.getSize()));
+}
+
 void sendSyncRequest(Handle handle, u64 ipcMessage) {
     context = kernel::getObject(handle);
 
@@ -138,22 +176,17 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
 
     PLOG_INFO << "Sending sync request to " << name << " (IPC message* = " << std::hex << ipcMessage << ")";
 
-    for (int i = 0; i < 32; i++) {
-        std::printf("%08X ", sys::memory::read32(ipcMessage + sizeof(u32) * i));
+    if (isDomain()) {
+        PLOG_FATAL << "Unimplemented domain";
+
+        exit(0);
     }
-    std::puts("");
 
     IPCBuffer ipcBuffer(ipcMessage);
 
     Header header{.raw = ipcBuffer.read<u64>()};
 
     PLOG_VERBOSE << "IPC header = " << std::hex << header.raw;
-
-    if (header.type == CommandType::Close) {
-        PLOG_INFO << "Closing service session (handle = " << std::hex << handle.raw << ")";
-        
-        return;
-    }
 
     if ((header.numX | header.numA | header.numB | header.numW) != 0) {
         PLOG_FATAL << "Unimplemented buffer descriptors";
@@ -170,38 +203,36 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
             PLOG_VERBOSE << "PID = " << std::hex << ipcBuffer.read<u32>();
         }
 
-        ipcBuffer.advance(sizeof(Handle) * (handleDescriptor.numCopyHandles + handleDescriptor.numMoveHandles));
+        for (u32 copyHandle = 0; copyHandle < handleDescriptor.numCopyHandles; copyHandle++) {
+            PLOG_VERBOSE << "Copy handle " << std::hex << ipcBuffer.read<u32>();
+        }
+
+        for (u32 moveHandle = 0; moveHandle < handleDescriptor.numMoveHandles; moveHandle++) {
+            PLOG_VERBOSE << "Move handle " << std::hex << ipcBuffer.read<u32>();
+        }
+    }
+
+    if (header.type == CommandType::Close) {
+        PLOG_INFO << "Closing service session (handle = " << std::hex << handle.raw << ")";
+        
+        return;
     }
 
     // Get beginning of raw data
-    u64 padding = TOTAL_PADDING;
-    u64 alignment = padding - (ipcBuffer.getOffset() & 15);
+    ipcBuffer.alignUp();
 
-    if (alignment != 0) {
-        ipcBuffer.advance(alignment);
-
-        padding -= alignment;
-    }
-
-    const u32 dataSize = sizeof(u32) * header.dataSize;
-
-    // Get data payload
-    u32 data[header.dataSize];
-    std::memcpy(data, ipcBuffer.get(), dataSize);
+    u32 *data = (u32 *)ipcBuffer.get();
 
     // Confirm input header and write output header
     if (data[DataPayloadOffset::Magic] != INPUT_HEADER_MAGIC) {
-        PLOG_FATAL << "Invalid data payload header";
+        PLOG_FATAL << "Invalid data payload header (" << std::hex << data[DataPayloadOffset::Magic] << ")";
 
         exit(0);
     }
 
-    // Service writes result
-    data[DataPayloadOffset::Magic] = OUTPUT_HEADER_MAGIC;
-    data[DataPayloadOffset::Version] = 0;
+    IPCReply reply;
 
-    std::vector<u8> output;
-
+    Result result;
     switch (header.type) {
         case CommandType::Invalid: // Wow
             PLOG_FATAL << "Invalid IPC type";
@@ -216,64 +247,42 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
                     exit(0);
                 }
                 
-                requestFunc->second(data[DataPayloadOffset::Command], data, output);
+                result = requestFunc->second(data[DataPayloadOffset::Command], &data[DataPayloadOffset::Parameters], reply);
             }
             break;
         case CommandType::Control:
-            handleControl(data[DataPayloadOffset::Command], data, output);
-            break;
+            return writeOutputHeader(data, handleControl(data[DataPayloadOffset::Command], &data[DataPayloadOffset::Parameters]));
         default:
             PLOG_FATAL << "Unimplemented IPC type " << header.type;
 
             exit(0);
     }
 
-    // Write data payload to memory
-    std::memcpy(ipcBuffer.get(), data, dataSize);
+    writeOutputHeader(data, result);
 
-    // Skip over data payload
-    ipcBuffer.advance(dataSize + padding);
+    // Skip over command packet
+    ipcBuffer.setOffset(sizeof(u32) * header.dataSize);
+    ipcBuffer.alignUp();
 
     // Write output to memory
     switch (header.flagsC) {
-        case 0: // No C buffer (data goes after header??)
-            ipcBuffer.setOffset(sizeof(Header));
+        case 0: // No C buffer
+            // Note: the reply appears to go after the command packet header
+            // if there is no handle descriptor
+            if (!header.hasHandleDescriptor) {
+                ipcBuffer.setOffset(sizeof(header.raw));
+            }
         case 1: // Inlined C buffer
-            std::memcpy(ipcBuffer.get(), &output[0], output.size());
+            std::memcpy(ipcBuffer.get(), reply.get(), reply.getSize());
             return;
-        case 2: // ?
-            PLOG_FATAL << "No C buffers to write output to";
-
-            exit(0);
         default:
             break;
     }
 
-    const u64 numC = header.flagsC - 2;
-
-    PLOG_VERBOSE << "Number of C buffers = " << numC;
-    
-    CBufferDescriptor descriptors[numC];
-
-    // Note: if I follow the information in https://switchbrew.org/wiki/IPC_Marshalling,
-    // the C buffer descriptors are all empty because they reside in the data payload (which gets skipped over).
-    // TODO: figure out how to get it working without doing this:
-    ipcBuffer.retire(16);
-
-    for (u64 i = 0; i < numC; i++) {
-        auto &descriptor = descriptors[i];
-
-        descriptor = CBufferDescriptor{.raw = ipcBuffer.read<u64>()};
-
-        PLOG_VERBOSE << "C buffer descriptor (num = " << i << ", addr = " << std::hex << descriptor.address << ", size = " << descriptor.size << ")";
-    }
-
-    const auto &descriptor = descriptors[0];
-    
-    std::memcpy(sys::memory::getPointer(descriptor.address), &output[0], std::min(descriptor.size, (u64)output.size()));
+    writeCBuffer(ipcBuffer, reply, header.flagsC - 2);
 }
 
-void handleControl(u32 command, u32 *data, std::vector<u8> &output) {
+Result handleControl(u32 command, u32 *data) {
     switch (command) {
         case Command::ConvertCurrentObjectToDomain:
             {
@@ -290,17 +299,13 @@ void handleControl(u32 command, u32 *data, std::vector<u8> &output) {
                 serviceSession->makeDomain();
                 serviceSession->add(serviceSession->getHandle());
 
-                const u32 objectID = 0; // Is always 0?
-
-                output.resize(sizeof(u32));
-                std::memcpy(&output[0], &objectID, sizeof(u32));
+                data[0] = 0; // Is always 0?
             }
             break;
         case Command::QueryPointerBufferSize:
             PLOG_INFO << "QueryPointerBufferSize";
 
-            output.resize(sizeof(u16));
-            std::memcpy(&output[0], &POINTER_BUFFER_SIZE, sizeof(u16));
+            data[0] = POINTER_BUFFER_SIZE;
             break;
         default:
             PLOG_FATAL << "Unimplemented command " << command;
@@ -308,7 +313,7 @@ void handleControl(u32 command, u32 *data, std::vector<u8> &output) {
             exit(0);
     }
 
-    data[DataPayloadOffset::Result] = Result::Success;
+    return KernelResult::Success;
 }
 
 }
