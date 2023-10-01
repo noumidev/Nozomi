@@ -36,6 +36,7 @@ set(SOURCES
     src/hle/handle_table.cpp
     src/hle/ipc_buffer.cpp
     src/hle/ipc_manager.cpp
+    src/hle/ipc_reply.cpp
     src/hle/kernel.cpp
     src/hle/object.cpp
     src/hle/svc.cpp
@@ -57,6 +58,7 @@ set(HEADERS
     include/hle/handle_table.hpp
     include/hle/ipc_buffer.hpp
     include/hle/ipc_manager.hpp
+    include/hle/ipc_reply.hpp
     include/hle/kernel.hpp
     include/hle/object.hpp
     include/hle/result.hpp
