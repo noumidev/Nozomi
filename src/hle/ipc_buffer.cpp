@@ -22,6 +22,9 @@
 
 namespace hle {
 
+constexpr u64 ALIGNMENT = 16;
+constexpr u64 ALIGNMENT_MASK = ALIGNMENT - 1;
+
 IPCBuffer::IPCBuffer(u64 ipcMessage) {
     ipcPointer = sys::memory::getPointer(ipcMessage);
     
@@ -47,6 +50,16 @@ void IPCBuffer::advance(u64 offset) {
 
 void IPCBuffer::retire(u64 offset) {
     this->offset -= offset;
+}
+
+// Aligns IPC buffer offset to a 16-byte boundary
+void IPCBuffer::alignUp() {
+    const u64 alignment = offset & ALIGNMENT_MASK;
+    if (alignment != 0) {
+        advance(ALIGNMENT - alignment);
+    } else { // Move forward by 16 bytes if offset was aligned
+        advance(ALIGNMENT);
+    }
 }
 
 }

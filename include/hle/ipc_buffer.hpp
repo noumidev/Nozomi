@@ -36,6 +36,8 @@ struct IPCBuffer {
     void advance(u64 offset);
     void retire(u64 offset);
 
+    void alignUp();
+
     template<typename T>
     T read() {
         T data;
@@ -44,6 +46,13 @@ struct IPCBuffer {
         advance(sizeof(T));
 
         return data;
+    }
+
+    template<typename T>
+    void write(T data) {
+        std::memcpy(get(), &data, sizeof(T));
+
+        advance(sizeof(T));
     }
 
 private:
