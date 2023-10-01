@@ -38,6 +38,8 @@ public:
     KDomain();
     virtual ~KDomain();
 
+    bool isDomainObject();
+
     void makeDomain();
 
     void add(Handle handle);

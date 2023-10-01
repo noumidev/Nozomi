@@ -29,6 +29,10 @@ KDomain::KDomain() : isDomain(false) {}
 
 KDomain::~KDomain() {}
 
+bool KDomain::isDomainObject() {
+    return isDomain;
+}
+
 void KDomain::makeDomain() {
     isDomain = true;
 }
