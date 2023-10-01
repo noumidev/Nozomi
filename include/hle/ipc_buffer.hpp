@@ -36,6 +36,7 @@ struct IPCBuffer {
     void advance(u64 offset);
     void retire(u64 offset);
 
+    void align(u64 alignment);
     void alignUp();
 
     template<typename T>

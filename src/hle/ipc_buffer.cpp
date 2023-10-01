@@ -18,6 +18,7 @@
 
 #include "ipc_buffer.hpp"
 
+#include <cassert>
 #include <cstdio>
 
 #include "memory.hpp"
@@ -52,6 +53,16 @@ void IPCBuffer::advance(u64 offset) {
 
 void IPCBuffer::retire(u64 offset) {
     this->offset -= offset;
+}
+
+// Aligns IPC buffer
+void IPCBuffer::align(u64 alignment) {
+    assert(alignment != 0);
+
+    const u64 alignmentMask = alignment - 1;
+    if ((offset & alignmentMask) != 0) {
+        offset += alignment - (offset & alignmentMask);
+    }
 }
 
 // Aligns IPC data payload
