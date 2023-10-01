@@ -51,11 +51,27 @@ Result cmdOpenSession(u32 *data, IPCReply &reply) {
 
     PLOG_INFO << "OpenSession";
 
-    const Handle handle = kernel::makeServiceSession("apm_manager");
+    const Handle handle = kernel::makeService<APMSession>();
 
     reply.write(handle.raw);
 
     return KernelResult::Success;
+}
+
+APMSession::APMSession() {}
+
+APMSession::~APMSession() {}
+
+Result APMSession::handleRequest(u32 command, u32 *data, IPCReply &reply) {
+    (void)data;
+    (void)reply;
+
+    switch (command) {
+        default:
+            PLOG_FATAL << "Unimplemented command " << command;
+
+            exit(0);
+    }
 }
 
 }

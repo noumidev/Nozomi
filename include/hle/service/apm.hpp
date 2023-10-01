@@ -19,6 +19,7 @@
 #pragma once
 
 #include "ipc_reply.hpp"
+#include "object.hpp"
 #include "types.hpp"
 
 namespace hle::service::apm {
@@ -26,5 +27,17 @@ namespace hle::service::apm {
 Result handleRequest(u32 command, u32 *data, IPCReply &reply);
 
 Result cmdOpenSession(u32 *data, IPCReply &reply);
+
+class APMSession : public KService {
+public:
+    APMSession();
+    ~APMSession();
+
+    const char *getName() override {
+        return "IApmSession";
+    }
+
+    Result handleRequest(u32 command, u32 *data, IPCReply &reply) override;
+};
 
 }
