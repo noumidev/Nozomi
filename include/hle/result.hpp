@@ -22,7 +22,7 @@
 
 namespace hle {
 
-namespace Result {
+namespace KernelResult {
     enum : u32 {
         Success = 0,
     };

@@ -107,7 +107,7 @@ void svcCloseHandle() {
 
     kernel::closeHandle(handle);
 
-    sys::cpu::set(0, Result::Success);
+    sys::cpu::set(0, KernelResult::Success);
 }
 
 void svcConnectToNamedPort() {
@@ -117,7 +117,7 @@ void svcConnectToNamedPort() {
 
     const char *name = (char *)sys::memory::getPointer(portName);
 
-    sys::cpu::set(0, Result::Success);
+    sys::cpu::set(0, KernelResult::Success);
     sys::cpu::set(1, kernel::makeSession(kernel::getPort(name)->getHandle()).raw);
 }
 
@@ -128,7 +128,7 @@ void svcGetInfo() {
 
     PLOG_INFO << "svcGetInfo (type = " << type << ", handle = " << std::hex << handle.raw << ", sub type = " << subType << ")";
 
-    sys::cpu::set(0, Result::Success);
+    sys::cpu::set(0, KernelResult::Success);
 
     switch (type) {
         case InfoType::AliasRegionAddress:
@@ -265,7 +265,7 @@ void svcOutputDebugString() {
 
     PLOG_DEBUG << (const char *)msg;
 
-    sys::cpu::set(0, Result::Success);
+    sys::cpu::set(0, KernelResult::Success);
 }
 
 void svcQueryMemory() {
@@ -285,7 +285,7 @@ void svcQueryMemory() {
     sys::memory::write32(memoryInfo + 32, 0); // DeviceRefCount?
     sys::memory::write32(memoryInfo + 36, 0); // Padding
 
-    sys::cpu::set(0, Result::Success);
+    sys::cpu::set(0, KernelResult::Success);
     sys::cpu::set(1, 0); // Page info?
 }
 
@@ -296,7 +296,7 @@ void svcSendSyncRequest() {
 
     ipc::sendSyncRequest(handle, sys::cpu::getTLSAddr());
 
-    sys::cpu::set(0, Result::Success);
+    sys::cpu::set(0, KernelResult::Success);
 }
 
 void svcSetHeapSize() {
@@ -312,7 +312,7 @@ void svcSetHeapSize() {
 
     sys::memory::setHeapSize(size);
 
-    sys::cpu::set(0, Result::Success);
+    sys::cpu::set(0, KernelResult::Success);
     sys::cpu::set(1, sys::memory::MemoryBase::Heap);
 }
 
