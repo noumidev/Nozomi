@@ -50,11 +50,10 @@ namespace FirmwareVersion {
     };
 }
 
-void handleRequest(u32 command, u32 *data, std::vector<u8> &output) {
+Result handleRequest(u32 command, u32 *data, IPCReply &reply) {
     switch (command) {
         case Command::GetFirmwareVersion:
-            cmdGetFirmwareVersion(data, output);
-            break;
+            return cmdGetFirmwareVersion(data, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -62,14 +61,15 @@ void handleRequest(u32 command, u32 *data, std::vector<u8> &output) {
     }
 }
 
-void cmdGetFirmwareVersion(u32 *data, std::vector<u8> &output) {
+Result cmdGetFirmwareVersion(u32 *data, IPCReply &reply) {
     (void)data;
 
     PLOG_INFO << "GetFirmwareVersion";
 
-    // Writes 0x100 bytes worth of information to output
-    output.resize(0x100);
-    std::memset(&output[0], 0, output.size());
+    // Writes 0x100 bytes worth of information
+    reply.setSize(0x100);
+
+    u8 *output = (u8 *)reply.get();
 
     output[0] = FirmwareVersion::Major;
     output[1] = FirmwareVersion::Minor;
@@ -82,7 +82,7 @@ void cmdGetFirmwareVersion(u32 *data, std::vector<u8> &output) {
     std::strcpy((char *)&output[0x68], DISPLAY_VERSION);
     std::strcpy((char *)&output[0x80], DISPLAY_TITLE);
 
-    data[ipc::DataPayloadOffset::Result] = Result::Success;
+    return KernelResult::Success;
 }
 
 }

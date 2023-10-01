@@ -18,14 +18,13 @@
 
 #pragma once
 
-#include <vector>
-
+#include "ipc_reply.hpp"
 #include "types.hpp"
 
 namespace hle::service::apm {
 
-void handleRequest(u32 command, u32 *data, std::vector<u8> &output);
+Result handleRequest(u32 command, u32 *data, IPCReply &reply);
 
-void cmdOpenSession(u32 *data, std::vector<u8> &output);
+Result cmdOpenSession(u32 *data, IPCReply &reply);
 
 }

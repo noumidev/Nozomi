@@ -18,14 +18,13 @@
 
 #pragma once
 
-#include <vector>
-
+#include "ipc_reply.hpp"
 #include "types.hpp"
 
 namespace hle::service::set_sys {
 
-void handleRequest(u32 command, u32 *data, std::vector<u8> &output);
+Result handleRequest(u32 command, u32 *data, IPCReply &reply);
 
-void cmdGetFirmwareVersion(u32 *data, std::vector<u8> &output);
+Result cmdGetFirmwareVersion(u32 *data, IPCReply &reply);
 
 }

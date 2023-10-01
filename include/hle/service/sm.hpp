@@ -18,15 +18,14 @@
 
 #pragma once
 
-#include <vector>
-
+#include "ipc_reply.hpp"
 #include "types.hpp"
 
 namespace hle::service::sm {
 
-void handleRequest(u32 command, u32 *data, std::vector<u8> &output);
+Result handleRequest(u32 command, u32 *data, IPCReply &reply);
 
-void cmdGetServiceHandle(u32 *data, std::vector<u8> &output);
-void cmdRegisterClient(u32 *data, std::vector<u8> &output);
+Result cmdGetServiceHandle(u32 *data, IPCReply &reply);
+Result cmdRegisterClient(u32 *data, IPCReply &reply);
 
 }

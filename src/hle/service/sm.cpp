@@ -59,14 +59,12 @@ const char *getServiceName(u64 service) {
     return serviceName->second;
 }
 
-void handleRequest(u32 command, u32 *data, std::vector<u8> &output) {
+Result handleRequest(u32 command, u32 *data, IPCReply &reply) {
     switch (command) {
         case Command::RegisterClient:
-            cmdRegisterClient(data, output);
-            break;
+            return cmdRegisterClient(data, reply);
         case Command::GetServiceHandle:
-            cmdGetServiceHandle(data, output);
-            break;
+            return cmdGetServiceHandle(data, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -74,9 +72,9 @@ void handleRequest(u32 command, u32 *data, std::vector<u8> &output) {
     }
 }
 
-void cmdGetServiceHandle(u32 *data, std::vector<u8> &output) {
+Result cmdGetServiceHandle(u32 *data, IPCReply &reply) {
     u64 service;
-    std::memcpy(&service, &data[ipc::DataPayloadOffset::Parameters], sizeof(u64));
+    std::memcpy(&service, data, sizeof(u64));
 
     // Get service name
     const char *serviceName = getServiceName(service);
@@ -85,21 +83,18 @@ void cmdGetServiceHandle(u32 *data, std::vector<u8> &output) {
 
     const Handle handle = kernel::makeServiceSession(serviceName);
 
-    output.resize(sizeof(Handle));
-    std::memcpy(&output[0], &handle.raw, sizeof(Handle));
+    reply.write(handle.raw);
 
-    data[ipc::DataPayloadOffset::Result] = Result::Success;
+    return KernelResult::Success;
 }
 
-void cmdRegisterClient(u32 *data, std::vector<u8> &output) {
-    (void)output;
+Result cmdRegisterClient(u32 *data, IPCReply &reply) {
+    (void)data;
+    (void)reply;
 
-    u64 input;
-    std::memcpy(&input, &data[ipc::DataPayloadOffset::Parameters], sizeof(u64));
+    PLOG_INFO << "cmdRegisterClient";
 
-    PLOG_INFO << "cmdRegisterClient (input = " << std::hex << input << ")";
-
-    data[ipc::DataPayloadOffset::Result] = Result::Success;
+    return KernelResult::Success;
 }
 
 }

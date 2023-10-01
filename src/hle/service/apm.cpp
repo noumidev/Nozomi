@@ -36,11 +36,10 @@ namespace Command {
     };
 }
 
-void handleRequest(u32 command, u32 *data, std::vector<u8> &output) {
+Result handleRequest(u32 command, u32 *data, IPCReply &reply) {
     switch (command) {
         case Command::OpenSession:
-            cmdOpenSession(data, output);
-            break;
+            return cmdOpenSession(data, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -48,15 +47,16 @@ void handleRequest(u32 command, u32 *data, std::vector<u8> &output) {
     }
 }
 
-void cmdOpenSession(u32 *data, std::vector<u8> &output) {
+Result cmdOpenSession(u32 *data, IPCReply &reply) {
+    (void)data;
+
     PLOG_INFO << "OpenSession";
 
     const Handle handle = kernel::makeServiceSession("apm_manager");
 
-    output.resize(sizeof(u32));
-    std::memcpy(&output[0], &handle.raw, sizeof(u32));
+    reply.write(handle.raw);
 
-    data[ipc::DataPayloadOffset::Result] = Result::Success;
+    return KernelResult::Success;
 }
 
 }
