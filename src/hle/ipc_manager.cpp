@@ -36,6 +36,7 @@
 
 #include "apm.hpp"
 #include "applet_oe.hpp"
+#include "hid.hpp"
 #include "set_sys.hpp"
 #include "sm.hpp"
 
@@ -55,6 +56,7 @@ constexpr u32 OUTPUT_HEADER_MAGIC = makeMagic("SFCO");
 static std::map<std::string, ServiceFunction> requestFuncMap {
     {std::string("apm"), &service::apm::handleRequest},
     {std::string("appletOE"), &service::applet_oe::handleRequest},
+    {std::string("hid"), &service::hid::handleRequest},
     {std::string("set:sys"), &service::set_sys::handleRequest},
     {std::string("sm:"), &service::sm::handleRequest},
 };
@@ -137,6 +139,18 @@ static_assert(sizeof(CBufferDescriptor) == sizeof(u64));
 
 KObject *context;
 
+void printIPCBuffer(u64 ipcMessage) {
+    IPCBuffer ipcBuffer(ipcMessage);
+
+    for (int i = 0; i < 0x40; i++) {
+        std::printf("%08X ", ipcBuffer.read<u32>());
+
+        if ((i % 8) == 7) {
+            std::puts("");
+        }
+    }
+}
+
 bool isDomain() {
     KDomain *domain = dynamic_cast<KDomain *>(context);
 
@@ -196,6 +210,8 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
     PLOG_INFO << "Sending sync request to " << name << " (IPC message* = " << std::hex << ipcMessage << ")";
 
     IPCBuffer ipcBuffer(ipcMessage);
+
+    printIPCBuffer(ipcMessage);
 
     Header header{.raw = ipcBuffer.read<u64>()};
 
@@ -332,6 +348,8 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
             }
 
             std::memcpy(ipcBuffer.get(), reply.get(), reply.getSize());
+
+            printIPCBuffer(ipcMessage);
             return;
         case 1: // Inlined C buffer
             PLOG_FATAL << "Unimplemented inlined C buffer";
