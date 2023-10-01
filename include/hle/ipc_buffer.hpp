@@ -58,7 +58,7 @@ struct IPCBuffer {
 private:
     void *ipcPointer;
 
-    u64 offset;
+    u64 offset, remAlignment;
 };
 
 }

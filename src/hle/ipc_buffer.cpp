@@ -18,6 +18,8 @@
 
 #include "ipc_buffer.hpp"
 
+#include <cstdio>
+
 #include "memory.hpp"
 
 namespace hle {
@@ -25,7 +27,7 @@ namespace hle {
 constexpr u64 ALIGNMENT = 16;
 constexpr u64 ALIGNMENT_MASK = ALIGNMENT - 1;
 
-IPCBuffer::IPCBuffer(u64 ipcMessage) {
+IPCBuffer::IPCBuffer(u64 ipcMessage) : remAlignment(ALIGNMENT) {
     ipcPointer = sys::memory::getPointer(ipcMessage);
     
     setOffset(0);
@@ -52,13 +54,29 @@ void IPCBuffer::retire(u64 offset) {
     this->offset -= offset;
 }
 
-// Aligns IPC buffer offset to a 16-byte boundary
+// Aligns IPC data payload
 void IPCBuffer::alignUp() {
+    if (remAlignment == 0) { // The max amount of padding is 16 bytes
+        return;
+    }
+    
+    if (remAlignment != ALIGNMENT) { // Add remaining padding
+        advance(remAlignment);
+
+        remAlignment = 0;
+
+        return;
+    }
+
     const u64 alignment = offset & ALIGNMENT_MASK;
     if (alignment != 0) {
         advance(ALIGNMENT - alignment);
+
+        remAlignment = alignment;
     } else { // Move forward by 16 bytes if offset was aligned
         advance(ALIGNMENT);
+
+        remAlignment = 0;
     }
 }
 
