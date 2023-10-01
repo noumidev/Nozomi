@@ -240,7 +240,7 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
 
         // Write domain output header
         ipcBuffer.retire(sizeof(u64));
-        ipcBuffer.write(1ULL);
+        ipcBuffer.write(0ULL);
 
         ipcBuffer.advance(sizeof(u64)); // Skip padding
 
@@ -319,7 +319,6 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
 
     // Skip over command packet
     ipcBuffer.setOffset(sizeof(u32) * header.dataSize);
-    ipcBuffer.alignUp();
 
     // Write output to memory
     switch (header.flagsC) {
@@ -327,16 +326,22 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
             ipcBuffer.align(16);
 
             // Note: the reply appears to go after the command packet header
-            // if there is no handle descriptor
-            if (!header.hasHandleDescriptor) {
+            // if there is no handle descriptor and the current IPC does not target a domain
+            if (!header.hasHandleDescriptor && !isDomain()) {
                 ipcBuffer.setOffset(sizeof(header.raw));
             }
-        case 1: // Inlined C buffer
+
             std::memcpy(ipcBuffer.get(), reply.get(), reply.getSize());
             return;
+        case 1: // Inlined C buffer
+            PLOG_FATAL << "Unimplemented inlined C buffer";
+
+            exit(0);
         default:
             break;
     }
+
+    ipcBuffer.alignUp();
 
     writeCBuffer(ipcBuffer, reply, header.flagsC - 2);
 }
