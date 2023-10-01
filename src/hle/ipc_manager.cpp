@@ -35,6 +35,7 @@
 #include "result.hpp"
 
 #include "apm.hpp"
+#include "applet_oe.hpp"
 #include "set_sys.hpp"
 #include "sm.hpp"
 
@@ -53,6 +54,7 @@ constexpr u32 OUTPUT_HEADER_MAGIC = makeMagic("SFCO");
 
 static std::map<std::string, ServiceFunction> requestFuncMap {
     {std::string("apm"), &service::apm::handleRequest},
+    {std::string("appletOE"), &service::applet_oe::handleRequest},
     {std::string("set:sys"), &service::set_sys::handleRequest},
     {std::string("sm:"), &service::sm::handleRequest},
 };
@@ -77,6 +79,13 @@ namespace Command {
     };
 }
 
+namespace DomainCommand {
+    enum : u64 {
+        SendMessage = 1,
+        CloseVirtualHandle,
+    };
+}
+
 union Header {
     u64 raw;
     struct {
@@ -89,6 +98,16 @@ union Header {
         u64 flagsC : 4;
         u64 : 17;
         u64 hasHandleDescriptor : 1;
+    };
+};
+
+union DomainHeader {
+    u64 raw;
+    struct {
+        u64 command : 8;
+        u64 numInput : 8;
+        u64 dataPayloadLength : 16;
+        u64 objectID : 32;
     };
 };
 
@@ -176,12 +195,6 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
 
     PLOG_INFO << "Sending sync request to " << name << " (IPC message* = " << std::hex << ipcMessage << ")";
 
-    if (isDomain()) {
-        PLOG_FATAL << "Unimplemented domain";
-
-        exit(0);
-    }
-
     IPCBuffer ipcBuffer(ipcMessage);
 
     Header header{.raw = ipcBuffer.read<u64>()};
@@ -221,6 +234,38 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
     // Get beginning of raw data
     ipcBuffer.alignUp();
 
+    DomainHeader domainHeader{.raw = 0ULL};
+    if (isDomain()) {
+        domainHeader.raw = ipcBuffer.read<u64>();
+
+        // Write domain output header
+        ipcBuffer.retire(sizeof(u64));
+        ipcBuffer.write(1ULL);
+
+        ipcBuffer.advance(sizeof(u64)); // Skip padding
+
+        PLOG_VERBOSE << "Domain header (command = " << std::hex << domainHeader.command << ", input count = " << domainHeader.numInput << ", data payload length = " << domainHeader.dataPayloadLength << ", ID = " << domainHeader.objectID << ")";
+
+        if (domainHeader.numInput != 0) {
+            PLOG_FATAL << "Unimplemented input objects";
+
+            exit(0);
+        }
+
+        switch (domainHeader.command) {
+            case DomainCommand::SendMessage:
+                break;
+            case DomainCommand::CloseVirtualHandle:
+                PLOG_FATAL << "Unimplemented CloseVirtualHandle";
+
+                exit(0);
+            default:
+                PLOG_FATAL << "Invalid domain command";
+
+                exit(0);
+        }
+    }
+
     u32 *data = (u32 *)ipcBuffer.get();
 
     // Confirm input header and write output header
@@ -240,14 +285,26 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
             exit(0);
         case CommandType::Request:
             {
-                const auto requestFunc = requestFuncMap.find(std::string(name));
-                if (requestFunc == requestFuncMap.end()) {
-                    PLOG_FATAL << "Request to unimplemented service " << name;
+                if (isDomain() && ((u32)domainHeader.objectID != context->getHandle().raw)) { // Send command to domain object
+                    KService *service = dynamic_cast<KService *>(kernel::getObject(Handle{.raw = (u32)domainHeader.objectID}));
+            
+                    if (service == NULL) {
+                        PLOG_FATAL << "Invalid domain object";
 
-                    exit(0);
+                        exit(0);
+                    }
+
+                    result = service->handleRequest(data[DataPayloadOffset::Command], &data[DataPayloadOffset::Parameters], reply);
+                } else {
+                    const auto requestFunc = requestFuncMap.find(std::string(name));
+                    if (requestFunc == requestFuncMap.end()) {
+                        PLOG_FATAL << "Request to unimplemented service " << name;
+
+                        exit(0);
+                    }
+                    
+                    result = requestFunc->second(data[DataPayloadOffset::Command], &data[DataPayloadOffset::Parameters], reply);
                 }
-                
-                result = requestFunc->second(data[DataPayloadOffset::Command], &data[DataPayloadOffset::Parameters], reply);
             }
             break;
         case CommandType::Control:
@@ -267,6 +324,8 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
     // Write output to memory
     switch (header.flagsC) {
         case 0: // No C buffer
+            ipcBuffer.align(16);
+
             // Note: the reply appears to go after the command packet header
             // if there is no handle descriptor
             if (!header.hasHandleDescriptor) {
@@ -299,7 +358,7 @@ Result handleControl(u32 command, u32 *data) {
                 serviceSession->makeDomain();
                 serviceSession->add(serviceSession->getHandle());
 
-                data[0] = 0; // Is always 0?
+                data[0] = serviceSession->getHandle().raw; // I think
             }
             break;
         case Command::QueryPointerBufferSize:
