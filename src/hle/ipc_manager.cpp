@@ -34,9 +34,11 @@
 
 #include "apm.hpp"
 #include "applet_oe.hpp"
+#include "fsp_srv.hpp"
 #include "hid.hpp"
 #include "set_sys.hpp"
 #include "sm.hpp"
+#include "time.hpp"
 
 namespace hle::ipc {
 
@@ -47,9 +49,11 @@ constexpr u16 POINTER_BUFFER_SIZE = 0x8000; // Value taken from Yuzu
 static std::map<std::string, ServiceFunction> requestFuncMap {
     {std::string("apm"), &service::apm::handleRequest},
     {std::string("appletOE"), &service::applet_oe::handleRequest},
+    {std::string("fsp-srv"), &service::fsp_srv::handleRequest},
     {std::string("hid"), &service::hid::handleRequest},
     {std::string("set:sys"), &service::set_sys::handleRequest},
     {std::string("sm:"), &service::sm::handleRequest},
+    {std::string("time:u"), &service::time::handleRequest},
 };
 
 namespace Command {
