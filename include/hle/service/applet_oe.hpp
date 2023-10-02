@@ -18,18 +18,18 @@
 
 #pragma once
 
-#include "ipc_reply.hpp"
+#include "ipc.hpp"
 #include "object.hpp"
 #include "types.hpp"
 
 namespace hle::service::applet_oe {
 
-Result handleRequest(u32 command, u32 *data, IPCReply &reply);
+void handleRequest(IPCContext &ctx, IPCContext &reply);
 
-Result cmdOpenApplicationProxy(u32 *data, IPCReply &reply);
+void cmdOpenApplicationProxy(IPCContext &ctx, IPCContext &reply);
 
 class ApplicationFunctions : public KService {
-    Result cmdNotifyRunning(u32 *data, IPCReply &reply);
+    void cmdNotifyRunning(IPCContext &ctx, IPCContext &reply);
 
 public:
     ApplicationFunctions();
@@ -39,18 +39,18 @@ public:
         return "IApplicationFunctions";
     }
 
-    Result handleRequest(u32 command, u32 *data, IPCReply &reply) override;
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
 };
 
 class ApplicationProxy : public KService {
-    Result cmdGetApplicationFunctions(u32 *data, IPCReply &reply);
-    Result cmdGetAudioController(u32 *data, IPCReply &reply);
-    Result cmdGetCommonStateGetter(u32 *data, IPCReply &reply);
-    Result cmdGetDebugFunctions(u32 *data, IPCReply &reply);
-    Result cmdGetDisplayController(u32 *data, IPCReply &reply);
-    Result cmdGetLibraryAppletCreator(u32 *data, IPCReply &reply);
-    Result cmdGetSelfController(u32 *data, IPCReply &reply);
-    Result cmdGetWindowController(u32 *data, IPCReply &reply);
+    void cmdGetApplicationFunctions(IPCContext &ctx, IPCContext &reply);
+    void cmdGetAudioController(IPCContext &ctx, IPCContext &reply);
+    void cmdGetCommonStateGetter(IPCContext &ctx, IPCContext &reply);
+    void cmdGetDebugFunctions(IPCContext &ctx, IPCContext &reply);
+    void cmdGetDisplayController(IPCContext &ctx, IPCContext &reply);
+    void cmdGetLibraryAppletCreator(IPCContext &ctx, IPCContext &reply);
+    void cmdGetSelfController(IPCContext &ctx, IPCContext &reply);
+    void cmdGetWindowController(IPCContext &ctx, IPCContext &reply);
 
 public:
     ApplicationProxy();
@@ -60,7 +60,7 @@ public:
         return "IApplicationProxy";
     }
 
-    Result handleRequest(u32 command, u32 *data, IPCReply &reply) override;
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
 };
 
 class AudioController : public KService {
@@ -72,16 +72,16 @@ public:
         return "IAudioController";
     }
 
-    Result handleRequest(u32 command, u32 *data, IPCReply &reply) override;
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
 };
 
 class CommonStateGetter : public KService {
     Handle event;
 
-    Result cmdGetCurrentFocusState(u32 *data, IPCReply &reply);
-    Result cmdGetEventHandle(u32 *data, IPCReply &reply);
-    Result cmdGetOperationMode(u32 *data, IPCReply &reply);
-    Result cmdGetPerformanceMode(u32 *data, IPCReply &reply);
+    void cmdGetCurrentFocusState(IPCContext &ctx, IPCContext &reply);
+    void cmdGetEventHandle(IPCContext &ctx, IPCContext &reply);
+    void cmdGetOperationMode(IPCContext &ctx, IPCContext &reply);
+    void cmdGetPerformanceMode(IPCContext &ctx, IPCContext &reply);
 
 public:
     CommonStateGetter();
@@ -91,7 +91,7 @@ public:
         return "ICommonStateGetter";
     }
 
-    Result handleRequest(u32 command, u32 *data, IPCReply &reply) override;
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
 };
 
 class DebugFunctions : public KService {
@@ -103,7 +103,7 @@ public:
         return "IDebugFunctions";
     }
 
-    Result handleRequest(u32 command, u32 *data, IPCReply &reply) override;
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
 };
 
 class DisplayController : public KService {
@@ -115,7 +115,7 @@ public:
         return "IDisplayController";
     }
 
-    Result handleRequest(u32 command, u32 *data, IPCReply &reply) override;
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
 };
 
 class LibraryAppletCreator : public KService {
@@ -127,17 +127,17 @@ public:
         return "LibraryAppletCreator";
     }
 
-    Result handleRequest(u32 command, u32 *data, IPCReply &reply) override;
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
 };
 
 class SelfController : public KService {
     Handle accumulatedSuspendedTickChangedEvent;
 
-    Result cmdGetAccumulatedSuspendedTickChangedEvent(u32 *data, IPCReply &reply);
-    Result cmdSetFocusHandlingMode(u32 *data, IPCReply &reply);
-    Result cmdSetOperationModeChangedNotification(u32 *data, IPCReply &reply);
-    Result cmdSetOutOfFocusSuspendingEnabled(u32 *data, IPCReply &reply);
-    Result cmdSetPerformanceModeChangedNotification(u32 *data, IPCReply &reply);
+    void cmdGetAccumulatedSuspendedTickChangedEvent(IPCContext &ctx, IPCContext &reply);
+    void cmdSetFocusHandlingMode(IPCContext &ctx, IPCContext &reply);
+    void cmdSetOperationModeChangedNotification(IPCContext &ctx, IPCContext &reply);
+    void cmdSetOutOfFocusSuspendingEnabled(IPCContext &ctx, IPCContext &reply);
+    void cmdSetPerformanceModeChangedNotification(IPCContext &ctx, IPCContext &reply);
 
 public:
     SelfController();
@@ -147,12 +147,12 @@ public:
         return "ISelfController";
     }
 
-    Result handleRequest(u32 command, u32 *data, IPCReply &reply) override;
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
 };
 
 class WindowController : public KService {
-    Result cmdAcquireForegroundRights(u32 *data, IPCReply &reply);
-    Result cmdGetAppletResourceUserId(u32 *data, IPCReply &reply);
+    void cmdAcquireForegroundRights(IPCContext &ctx, IPCContext &reply);
+    void cmdGetAppletResourceUserId(IPCContext &ctx, IPCContext &reply);
 
 public:
     WindowController();
@@ -162,7 +162,7 @@ public:
         return "IWindowController";
     }
 
-    Result handleRequest(u32 command, u32 *data, IPCReply &reply) override;
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
 };
 
 }

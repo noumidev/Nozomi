@@ -19,24 +19,13 @@
 #pragma once
 
 #include "handle.hpp"
+#include "ipc.hpp"
 #include "types.hpp"
 
 namespace hle::ipc {
 
-namespace DataPayloadOffset {
-    enum : u32 {
-        Magic = 0,
-        Version = 1,
-        Command = 2, // Input
-        Result = 2, // Output
-        Padding = 3,
-        Parameters = 4,
-        Output = 4,
-    };
-}
-
 void sendSyncRequest(Handle handle, u64 ipcMessage);
 
-Result handleControl(u32 command, u32 *data);
+void handleControl(IPCContext &ctx, IPCContext &reply);
 
 }

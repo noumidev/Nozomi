@@ -18,13 +18,13 @@
 
 #pragma once
 
-#include "ipc_reply.hpp"
+#include "ipc.hpp"
 #include "types.hpp"
 
 namespace hle::service::set_sys {
 
-Result handleRequest(u32 command, u32 *data, IPCReply &reply);
+void handleRequest(IPCContext &ctx, IPCContext &reply);
 
-Result cmdGetFirmwareVersion(u32 *data, IPCReply &reply);
+void cmdGetFirmwareVersion(IPCContext &ctx, IPCContext &reply);
 
 }

@@ -20,6 +20,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 
 #include <plog/Log.h>
 
@@ -49,10 +50,11 @@ namespace FirmwareVersion {
     };
 }
 
-Result handleRequest(u32 command, u32 *data, IPCReply &reply) {
+void handleRequest(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
     switch (command) {
         case Command::GetFirmwareVersion:
-            return cmdGetFirmwareVersion(data, reply);
+            return cmdGetFirmwareVersion(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -60,15 +62,11 @@ Result handleRequest(u32 command, u32 *data, IPCReply &reply) {
     }
 }
 
-Result cmdGetFirmwareVersion(u32 *data, IPCReply &reply) {
-    (void)data;
-
+void cmdGetFirmwareVersion(IPCContext &ctx, IPCContext &reply) {
     PLOG_INFO << "GetFirmwareVersion";
 
-    // Writes 0x100 bytes worth of information
-    reply.setSize(0x100);
-
-    u8 *output = (u8 *)reply.get();
+    std::vector<u8> output;
+    output.resize(0x100);
 
     output[0] = FirmwareVersion::Major;
     output[1] = FirmwareVersion::Minor;
@@ -81,7 +79,10 @@ Result cmdGetFirmwareVersion(u32 *data, IPCReply &reply) {
     std::strcpy((char *)&output[0x68], DISPLAY_VERSION);
     std::strcpy((char *)&output[0x80], DISPLAY_TITLE);
 
-    return KernelResult::Success;
+    ctx.writeReceive(output);
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
 }

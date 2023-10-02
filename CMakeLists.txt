@@ -34,14 +34,13 @@ set(DYNARMIC_FRONTENDS "A64")
 set(SOURCES
     src/main.cpp
     src/hle/handle_table.cpp
-    src/hle/ipc_buffer.cpp
     src/hle/ipc_manager.cpp
-    src/hle/ipc_reply.cpp
     src/hle/kernel.cpp
     src/hle/object.cpp
     src/hle/svc.cpp
     src/hle/service/apm.cpp
     src/hle/service/applet_oe.cpp
+    src/hle/service/hid.cpp
     src/hle/service/set_sys.cpp
     src/hle/service/sm.cpp
     src/loader/loader.cpp
@@ -56,15 +55,15 @@ set(HEADERS
     include/common/types.hpp
     include/hle/handle.hpp
     include/hle/handle_table.hpp
-    include/hle/ipc_buffer.hpp
+    include/hle/ipc.hpp
     include/hle/ipc_manager.hpp
-    include/hle/ipc_reply.hpp
     include/hle/kernel.hpp
     include/hle/object.hpp
     include/hle/result.hpp
     include/hle/svc.hpp
     include/hle/service/apm.hpp
     include/hle/service/applet_oe.hpp
+    include/hle/service/hid.hpp
     include/hle/service/set_sys.hpp
     include/hle/service/sm.hpp
     include/loader/loader.hpp

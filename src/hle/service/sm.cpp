@@ -58,12 +58,13 @@ const char *getServiceName(u64 service) {
     return serviceName->second;
 }
 
-Result handleRequest(u32 command, u32 *data, IPCReply &reply) {
+void handleRequest(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
     switch (command) {
         case Command::RegisterClient:
-            return cmdRegisterClient(data, reply);
+            return cmdRegisterClient(ctx, reply);
         case Command::GetServiceHandle:
-            return cmdGetServiceHandle(data, reply);
+            return cmdGetServiceHandle(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -71,29 +72,27 @@ Result handleRequest(u32 command, u32 *data, IPCReply &reply) {
     }
 }
 
-Result cmdGetServiceHandle(u32 *data, IPCReply &reply) {
+void cmdGetServiceHandle(IPCContext &ctx, IPCContext &reply) {
     u64 service;
-    std::memcpy(&service, data, sizeof(u64));
+    std::memcpy(&service, ctx.getData(), sizeof(u64));
 
     // Get service name
     const char *serviceName = getServiceName(service);
 
     PLOG_INFO << "GetServiceHandle (service = " << serviceName << ")";
 
-    const Handle handle = kernel::makeServiceSession(serviceName);
-
-    reply.write(handle.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeServiceSession(serviceName));
 }
 
-Result cmdRegisterClient(u32 *data, IPCReply &reply) {
-    (void)data;
-    (void)reply;
+void cmdRegisterClient(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "cmdRegisterClient";
 
-    return KernelResult::Success;
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
 }

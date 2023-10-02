@@ -105,10 +105,11 @@ namespace PerformanceMode {
     };
 }
 
-Result handleRequest(u32 command, u32 *data, IPCReply &reply) {
+void handleRequest(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
     switch (command) {
         case Command::OpenApplicationProxy:
-            return cmdOpenApplicationProxy(data, reply);
+            return cmdOpenApplicationProxy(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -116,40 +117,39 @@ Result handleRequest(u32 command, u32 *data, IPCReply &reply) {
     }
 }
 
-Result cmdOpenApplicationProxy(u32 *data, IPCReply &reply) {
-    (void)data;
+void cmdOpenApplicationProxy(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "OpenApplicationProxy";
 
-    const Handle handle = kernel::makeService<ApplicationProxy>();
-
-    reply.write(handle.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeService<ApplicationProxy>());
 }
 
 ApplicationProxy::ApplicationProxy() {}
 
 ApplicationProxy::~ApplicationProxy() {}
 
-Result ApplicationProxy::handleRequest(u32 command, u32 *data, IPCReply &reply) {
+void ApplicationProxy::handleRequest(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
     switch (command) {
         case ApplicationProxyCommand::GetCommonStateGetter:
-            return cmdGetCommonStateGetter(data, reply);
+            return cmdGetCommonStateGetter(ctx, reply);
         case ApplicationProxyCommand::GetSelfController:
-            return cmdGetSelfController(data, reply);
+            return cmdGetSelfController(ctx, reply);
         case ApplicationProxyCommand::GetWindowController:
-            return cmdGetWindowController(data, reply);
+            return cmdGetWindowController(ctx, reply);
         case ApplicationProxyCommand::GetAudioController:
-            return cmdGetAudioController(data, reply);
+            return cmdGetAudioController(ctx, reply);
         case ApplicationProxyCommand::GetDisplayController:
-            return cmdGetDisplayController(data, reply);
+            return cmdGetDisplayController(ctx, reply);
         case ApplicationProxyCommand::GetLibraryAppletCreator:
-            return cmdGetLibraryAppletCreator(data, reply);
+            return cmdGetLibraryAppletCreator(ctx, reply);
         case ApplicationProxyCommand::GetApplicationFunctions:
-            return cmdGetApplicationFunctions(data, reply);
+            return cmdGetApplicationFunctions(ctx, reply);
         case ApplicationProxyCommand::GetDebugFunctions:
-            return cmdGetDebugFunctions(data, reply);
+            return cmdGetDebugFunctions(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -157,110 +157,95 @@ Result ApplicationProxy::handleRequest(u32 command, u32 *data, IPCReply &reply) 
     }
 }
 
-Result ApplicationProxy::cmdGetApplicationFunctions(u32 *data, IPCReply &reply) {
-    (void)data;
+void ApplicationProxy::cmdGetApplicationFunctions(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetApplicationFunctions";
 
-    const Handle handle = kernel::makeService<ApplicationFunctions>();
-
-    reply.write(handle.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeService<ApplicationFunctions>());
 }
 
-Result ApplicationProxy::cmdGetAudioController(u32 *data, IPCReply &reply) {
-    (void)data;
+void ApplicationProxy::cmdGetAudioController(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetAudioController";
 
-    const Handle handle = kernel::makeService<AudioController>();
-
-    reply.write(handle.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeService<AudioController>());
 }
 
-Result ApplicationProxy::cmdGetCommonStateGetter(u32 *data, IPCReply &reply) {
-    (void)data;
+void ApplicationProxy::cmdGetCommonStateGetter(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetCommonStateGetter";
 
-    const Handle handle = kernel::makeService<CommonStateGetter>();
-
-    reply.write(handle.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeService<CommonStateGetter>());
 }
 
-Result ApplicationProxy::cmdGetDebugFunctions(u32 *data, IPCReply &reply) {
-    (void)data;
+void ApplicationProxy::cmdGetDebugFunctions(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetDebugFunctions";
 
-    const Handle handle = kernel::makeService<DebugFunctions>();
-
-    reply.write(handle.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeService<DebugFunctions>());
 }
 
-Result ApplicationProxy::cmdGetDisplayController(u32 *data, IPCReply &reply) {
-    (void)data;
+void ApplicationProxy::cmdGetDisplayController(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetDisplayController";
 
-    const Handle handle = kernel::makeService<DisplayController>();
-
-    reply.write(handle.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeService<DisplayController>());
 }
 
-Result ApplicationProxy::cmdGetLibraryAppletCreator(u32 *data, IPCReply &reply) {
-    (void)data;
+void ApplicationProxy::cmdGetLibraryAppletCreator(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetLibraryAppletCreator";
 
-    const Handle handle = kernel::makeService<LibraryAppletCreator>();
-
-    reply.write(handle.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeService<LibraryAppletCreator>());
 }
 
-Result ApplicationProxy::cmdGetSelfController(u32 *data, IPCReply &reply) {
-    (void)data;
+void ApplicationProxy::cmdGetSelfController(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetSelfController";
 
-    const Handle handle = kernel::makeService<SelfController>();
-
-    reply.write(handle.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeService<SelfController>());
 }
 
-Result ApplicationProxy::cmdGetWindowController(u32 *data, IPCReply &reply) {
-    (void)data;
+void ApplicationProxy::cmdGetWindowController(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetWindowController";
 
-    const Handle handle = kernel::makeService<WindowController>();
-
-    reply.write(handle.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeService<WindowController>());
 }
 
 ApplicationFunctions::ApplicationFunctions() {}
 
 ApplicationFunctions::~ApplicationFunctions() {}
 
-Result ApplicationFunctions::handleRequest(u32 command, u32 *data, IPCReply &reply) {
+void ApplicationFunctions::handleRequest(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
     switch (command) {
         case ApplicationFunctionsCommand::NotifyRunning:
-            return cmdNotifyRunning(data, reply);
+            return cmdNotifyRunning(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -268,24 +253,24 @@ Result ApplicationFunctions::handleRequest(u32 command, u32 *data, IPCReply &rep
     }
 }
 
-Result ApplicationFunctions::cmdNotifyRunning(u32 *data, IPCReply &reply) {
-    (void)data;
+void ApplicationFunctions::cmdNotifyRunning(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "NotifyRunning (stubbed)";
 
+    reply.makeReply(3);
+    reply.write(KernelResult::Success);
     reply.write((u8)0); // Supposedly ignored by user processes
-
-    return KernelResult::Success;
 }
 
 AudioController::AudioController() {}
 
 AudioController::~AudioController() {}
 
-Result AudioController::handleRequest(u32 command, u32 *data, IPCReply &reply) {
-    (void)data;
+void AudioController::handleRequest(IPCContext &ctx, IPCContext &reply) {
     (void)reply;
 
+    const u32 command = ctx.getCommand();
     switch (command) {
         default:
             PLOG_FATAL << "Unimplemented command " << command;
@@ -298,16 +283,17 @@ CommonStateGetter::CommonStateGetter() : event(Handle{.raw = 0ULL}) {}
 
 CommonStateGetter::~CommonStateGetter() {}
 
-Result CommonStateGetter::handleRequest(u32 command, u32 *data, IPCReply &reply) {
+void CommonStateGetter::handleRequest(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
     switch (command) {
         case CommonStateGetterCommand::GetEventHandle:
-            return cmdGetEventHandle(data, reply);
+            return cmdGetEventHandle(ctx, reply);
         case CommonStateGetterCommand::GetOperationMode:
-            return cmdGetOperationMode(data, reply);
+            return cmdGetOperationMode(ctx, reply);
         case CommonStateGetterCommand::GetPerformanceMode:
-            return cmdGetPerformanceMode(data, reply);
+            return cmdGetPerformanceMode(ctx, reply);
         case CommonStateGetterCommand::GetCurrentFocusState:
-            return cmdGetCurrentFocusState(data, reply);
+            return cmdGetCurrentFocusState(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -315,18 +301,18 @@ Result CommonStateGetter::handleRequest(u32 command, u32 *data, IPCReply &reply)
     }
 }
 
-Result CommonStateGetter::cmdGetCurrentFocusState(u32 *data, IPCReply &reply) {
-    (void)data;
+void CommonStateGetter::cmdGetCurrentFocusState(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetCurrentFocusState (stubbed)";
 
+    reply.makeReply(3);
+    reply.write(KernelResult::Success);
     reply.write(FocusState::InFocus);
-
-    return KernelResult::Success;
 }
 
-Result CommonStateGetter::cmdGetEventHandle(u32 *data, IPCReply &reply) {
-    (void)data;
+void CommonStateGetter::cmdGetEventHandle(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetEventHandle";
 
@@ -334,39 +320,39 @@ Result CommonStateGetter::cmdGetEventHandle(u32 *data, IPCReply &reply) {
         event = kernel::makeEvent(true);
     }
 
-    reply.write(event.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 1);
+    reply.write(KernelResult::Success);
+    reply.copyHandle(event);
 }
 
-Result CommonStateGetter::cmdGetOperationMode(u32 *data, IPCReply &reply) {
-    (void)data;
+void CommonStateGetter::cmdGetOperationMode(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetOperationMode (stubbed)";
 
+    reply.makeReply(3);
+    reply.write(KernelResult::Success);
     reply.write(OperationMode::Handheld);
-
-    return KernelResult::Success;
 }
 
-Result CommonStateGetter::cmdGetPerformanceMode(u32 *data, IPCReply &reply) {
-    (void)data;
+void CommonStateGetter::cmdGetPerformanceMode(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetPerformanceMode (stubbed)";
 
+    reply.makeReply(3);
+    reply.write(KernelResult::Success);
     reply.write(PerformanceMode::Normal);
-
-    return KernelResult::Success;
 }
 
 DebugFunctions::DebugFunctions() {}
 
 DebugFunctions::~DebugFunctions() {}
 
-Result DebugFunctions::handleRequest(u32 command, u32 *data, IPCReply &reply) {
-    (void)data;
+void DebugFunctions::handleRequest(IPCContext &ctx, IPCContext &reply) {
     (void)reply;
 
+    const u32 command = ctx.getCommand();
     switch (command) {
         default:
             PLOG_FATAL << "Unimplemented command " << command;
@@ -379,10 +365,10 @@ DisplayController::DisplayController() {}
 
 DisplayController::~DisplayController() {}
 
-Result DisplayController::handleRequest(u32 command, u32 *data, IPCReply &reply) {
-    (void)data;
+void DisplayController::handleRequest(IPCContext &ctx, IPCContext &reply) {
     (void)reply;
 
+    const u32 command = ctx.getCommand();
     switch (command) {
         default:
             PLOG_FATAL << "Unimplemented command " << command;
@@ -395,10 +381,10 @@ LibraryAppletCreator::LibraryAppletCreator() {}
 
 LibraryAppletCreator::~LibraryAppletCreator() {}
 
-Result LibraryAppletCreator::handleRequest(u32 command, u32 *data, IPCReply &reply) {
-    (void)data;
+void LibraryAppletCreator::handleRequest(IPCContext &ctx, IPCContext &reply) {
     (void)reply;
 
+    const u32 command = ctx.getCommand();
     switch (command) {
         default:
             PLOG_FATAL << "Unimplemented command " << command;
@@ -411,18 +397,19 @@ SelfController::SelfController() : accumulatedSuspendedTickChangedEvent(Handle{.
 
 SelfController::~SelfController() {}
 
-Result SelfController::handleRequest(u32 command, u32 *data, IPCReply &reply) {
+void SelfController::handleRequest(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
     switch (command) {
         case SelfControllerCommand::SetOperationModeChangedNotification:
-            return cmdSetOperationModeChangedNotification(data, reply);
+            return cmdSetOperationModeChangedNotification(ctx, reply);
         case SelfControllerCommand::SetPerformanceModeChangedNotification:
-            return cmdSetPerformanceModeChangedNotification(data, reply);
+            return cmdSetPerformanceModeChangedNotification(ctx, reply);
         case SelfControllerCommand::SetFocusHandlingMode:
-            return cmdSetFocusHandlingMode(data, reply);
+            return cmdSetFocusHandlingMode(ctx, reply);
         case SelfControllerCommand::SetOutOfFocusSuspendingEnabled:
-            return cmdSetOutOfFocusSuspendingEnabled(data, reply);
+            return cmdSetOutOfFocusSuspendingEnabled(ctx, reply);
         case SelfControllerCommand::GetAccumulatedSuspendedTickChangedEvent:
-            return cmdGetAccumulatedSuspendedTickChangedEvent(data, reply);
+            return cmdGetAccumulatedSuspendedTickChangedEvent(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -430,8 +417,8 @@ Result SelfController::handleRequest(u32 command, u32 *data, IPCReply &reply) {
     }
 }
 
-Result SelfController::cmdGetAccumulatedSuspendedTickChangedEvent(u32 *data, IPCReply &reply) {
-    (void)data;
+void SelfController::cmdGetAccumulatedSuspendedTickChangedEvent(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetAccumulatedSuspendedTickChangedEvent";
 
@@ -439,13 +426,13 @@ Result SelfController::cmdGetAccumulatedSuspendedTickChangedEvent(u32 *data, IPC
         accumulatedSuspendedTickChangedEvent = kernel::makeEvent(true);
     }
 
-    reply.write(accumulatedSuspendedTickChangedEvent.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 1);
+    reply.write(KernelResult::Success);
+    reply.copyHandle(accumulatedSuspendedTickChangedEvent);
 }
 
-Result SelfController::cmdSetFocusHandlingMode(u32 *data, IPCReply &reply) {
-    (void)reply;
+void SelfController::cmdSetFocusHandlingMode(IPCContext &ctx, IPCContext &reply) {
+    void *data = ctx.getData();
 
     u8 focusHandlingMode[3];
     for (u64 i = 0; i < sizeof(focusHandlingMode); i++) {
@@ -454,49 +441,48 @@ Result SelfController::cmdSetFocusHandlingMode(u32 *data, IPCReply &reply) {
 
     PLOG_INFO << "SetFocusHandlingMode ([0] = " << std::hex << (u32)focusHandlingMode[0] << ", [1] = " << (u32)focusHandlingMode[1] << ", [2] = " << (u32)focusHandlingMode[2] << ") (stubbed)";
 
-    return KernelResult::Success;
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
-Result SelfController::cmdSetOperationModeChangedNotification(u32 *data, IPCReply &reply) {
-    (void)reply;
-
-    const u8 operationModeChangedNotification = ((u8 *)data)[0];
+void SelfController::cmdSetOperationModeChangedNotification(IPCContext &ctx, IPCContext &reply) {
+    const u8 operationModeChangedNotification = ((u8 *)ctx.getData())[0];
 
     PLOG_INFO << "SetOperationModeChangedNotification (notification = " << std::hex << (u32)operationModeChangedNotification << ") (stubbed)";
 
-    return KernelResult::Success;
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
-Result SelfController::cmdSetOutOfFocusSuspendingEnabled(u32 *data, IPCReply &reply) {
-    (void)reply;
-
-    const u8 outOfFocusHandlingEnabled = ((u8 *)data)[0];
+void SelfController::cmdSetOutOfFocusSuspendingEnabled(IPCContext &ctx, IPCContext &reply) {
+    const u8 outOfFocusHandlingEnabled = ((u8 *)ctx.getData())[0];
 
     PLOG_INFO << "SetOutOfFocusSuspendingEnabled (enabled = " << std::hex << (u32)outOfFocusHandlingEnabled << ") (stubbed)";
-
-    return KernelResult::Success;
+    
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
-Result SelfController::cmdSetPerformanceModeChangedNotification(u32 *data, IPCReply &reply) {
-    (void)reply;
-
-    const u8 performanceModeChangedNotification = ((u8 *)data)[0];
+void SelfController::cmdSetPerformanceModeChangedNotification(IPCContext &ctx, IPCContext &reply) {
+    const u8 performanceModeChangedNotification = ((u8 *)ctx.getData())[0];
 
     PLOG_INFO << "SetPerformanceModeChangedNotification (notification = " << std::hex << (u32)performanceModeChangedNotification << ") (stubbed)";
 
-    return KernelResult::Success;
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
 WindowController::WindowController() {}
 
 WindowController::~WindowController() {}
 
-Result WindowController::handleRequest(u32 command, u32 *data, IPCReply &reply) {
+void WindowController::handleRequest(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
     switch (command) {
         case WindowControllerCommand::GetAppletResourceUserId:
-            return cmdGetAppletResourceUserId(data, reply);
+            return cmdGetAppletResourceUserId(ctx, reply);
         case WindowControllerCommand::AcquireForegroundRights:
-            return cmdAcquireForegroundRights(data, reply);
+            return cmdAcquireForegroundRights(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -504,23 +490,23 @@ Result WindowController::handleRequest(u32 command, u32 *data, IPCReply &reply) 
     }
 }
 
-Result WindowController::cmdAcquireForegroundRights(u32 *data, IPCReply &reply) {
-    (void)data;
-    (void)reply;
+void WindowController::cmdAcquireForegroundRights(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "AcquireForegroundRights";
-
-    return KernelResult::Success;
+    
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
-Result WindowController::cmdGetAppletResourceUserId(u32 *data, IPCReply &reply) {
-    (void)data;
+void WindowController::cmdGetAppletResourceUserId(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "GetAppletResourceUserId (stubbed)";
-
-    reply.write(0ULL); // ??
-
-    return KernelResult::Success;
+    
+    reply.makeReply(4);
+    reply.write(KernelResult::Success);
+    reply.write(0ULL); // TODO: return proper ID?
 }
 
 }

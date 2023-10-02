@@ -18,14 +18,14 @@
 
 #pragma once
 
-#include "ipc_reply.hpp"
+#include "ipc.hpp"
 #include "types.hpp"
 
 namespace hle::service::sm {
 
-Result handleRequest(u32 command, u32 *data, IPCReply &reply);
+void handleRequest(IPCContext &ctx, IPCContext &reply);
 
-Result cmdGetServiceHandle(u32 *data, IPCReply &reply);
-Result cmdRegisterClient(u32 *data, IPCReply &reply);
+void cmdGetServiceHandle(IPCContext &ctx, IPCContext &reply);
+void cmdRegisterClient(IPCContext &ctx, IPCContext &reply);
 
 }

@@ -27,8 +27,6 @@
 
 #include <plog/Log.h>
 
-#include "ipc_buffer.hpp"
-#include "ipc_reply.hpp"
 #include "kernel.hpp"
 #include "memory.hpp"
 #include "object.hpp"
@@ -42,16 +40,9 @@
 
 namespace hle::ipc {
 
-using ServiceFunction = Result(*)(u32, u32 *, IPCReply &);
-
-constexpr u32 makeMagic(const char *magic) {
-    return (u32)magic[0] | ((u32)magic[1] << 8) | ((u32)magic[2] << 16) | ((u32)magic[3] << 24);
-}
+using ServiceFunction = void(*)(IPCContext &, IPCContext &);
 
 constexpr u16 POINTER_BUFFER_SIZE = 0x8000; // Value taken from Yuzu
-
-constexpr u32 INPUT_HEADER_MAGIC = makeMagic("SFCI");
-constexpr u32 OUTPUT_HEADER_MAGIC = makeMagic("SFCO");
 
 static std::map<std::string, ServiceFunction> requestFuncMap {
     {std::string("apm"), &service::apm::handleRequest},
@@ -61,19 +52,6 @@ static std::map<std::string, ServiceFunction> requestFuncMap {
     {std::string("sm:"), &service::sm::handleRequest},
 };
 
-namespace CommandType {
-    enum : u32 {
-        Invalid,
-        LegacyRequest,
-        Close,
-        LegacyControl,
-        Request,
-        Control,
-        RequestWithContext,
-        ControlWithContext,
-    };
-}
-
 namespace Command {
     enum : u32 {
         ConvertCurrentObjectToDomain = 0,
@@ -81,125 +59,23 @@ namespace Command {
     };
 }
 
-namespace DomainCommand {
-    enum : u64 {
-        SendMessage = 1,
-        CloseVirtualHandle,
-    };
-}
-
-union Header {
-    u64 raw;
-    struct {
-        u64 type : 16;
-        u64 numX : 4;
-        u64 numA : 4;
-        u64 numB : 4;
-        u64 numW : 4;
-        u64 dataSize : 10;
-        u64 flagsC : 4;
-        u64 : 17;
-        u64 hasHandleDescriptor : 1;
-    };
-};
-
-union DomainHeader {
-    u64 raw;
-    struct {
-        u64 command : 8;
-        u64 numInput : 8;
-        u64 dataPayloadLength : 16;
-        u64 objectID : 32;
-    };
-};
-
-static_assert(sizeof(Header) == sizeof(u64));
-
-union HandleDescriptor {
-    u32 raw;
-    struct {
-        u32 sendPID : 1;
-        u32 numCopyHandles : 4;
-        u32 numMoveHandles : 4;
-        u32 : 23;
-    };
-};
-
-static_assert(sizeof(HandleDescriptor) == sizeof(u32));
-
-union CBufferDescriptor {
-    u64 raw;
-    struct {
-        u64 address : 48;
-        u64 size : 16;
-    };
-};
-
-static_assert(sizeof(CBufferDescriptor) == sizeof(u64));
-
-KObject *context;
-
-void printIPCBuffer(u64 ipcMessage) {
-    IPCBuffer ipcBuffer(ipcMessage);
-
-    for (int i = 0; i < 0x40; i++) {
-        std::printf("%08X ", ipcBuffer.read<u32>());
-
-        if ((i % 8) == 7) {
-            std::puts("");
-        }
-    }
-}
-
-bool isDomain() {
-    KDomain *domain = dynamic_cast<KDomain *>(context);
-
-    if (domain == NULL) {
-        return false;
-    }
-
-    return domain->isDomainObject();
-}
-
-void writeOutputHeader(u32 *data, Result result) {
-    data[DataPayloadOffset::Magic] = OUTPUT_HEADER_MAGIC;
-    data[DataPayloadOffset::Version] = 0;
-    data[DataPayloadOffset::Result] = result;
-}
-
-void writeCBuffer(IPCBuffer &ipcBuffer, IPCReply &reply, u64 numC) {
-    if (numC == 0) {
-        PLOG_FATAL << "Invalid number of C buffer descriptors";
-
-        exit(0);
-    }
-
-    CBufferDescriptor descriptors[numC];
-
-    for (u64 i = 0; i < numC; i++) {
-        auto &descriptor = descriptors[i];
-
-        descriptor = CBufferDescriptor{.raw = ipcBuffer.read<u64>()};
-
-        PLOG_VERBOSE << "C buffer descriptor (num = " << i << ", addr = " << std::hex << descriptor.address << ", size = " << descriptor.size << ")";
-    }
-
-    const auto &descriptor = descriptors[0];
-    
-    std::memcpy(sys::memory::getPointer(descriptor.address), reply.get(), std::min(descriptor.size, reply.getSize()));
-}
-
 void sendSyncRequest(Handle handle, u64 ipcMessage) {
-    context = kernel::getObject(handle);
+    // Reset ctx
+    IPCContext ctx(sys::memory::getPointer(ipcMessage), kernel::getObject(handle));
+
+    KObject *session = ctx.getService();
 
     // Get service name from handle
     const char *name;
     switch (handle.type) {
+        case HandleType::KService:
+            name = ((KService *)session)->getName();
+            break;
         case HandleType::KServiceSession:
-            name = ((KServiceSession *)context)->getName();
+            name = ((KServiceSession *)session)->getName();
             break;
         case HandleType::KSession:
-            name = ((KPort *)kernel::getObject(((KSession *)context)->getPortHandle()))->getName();
+            name = ((KPort *)kernel::getObject(((KSession *)session)->getPortHandle()))->getName();
             break;
         default:
             PLOG_FATAL << "Unimplemented handle type " << handle.type;
@@ -209,193 +85,93 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
 
     PLOG_INFO << "Sending sync request to " << name << " (IPC message* = " << std::hex << ipcMessage << ")";
 
-    IPCBuffer ipcBuffer(ipcMessage);
+    ctx.unmarshal();
 
-    printIPCBuffer(ipcMessage);
+    const u64 commandType = ctx.getCommandType();
 
-    Header header{.raw = ipcBuffer.read<u64>()};
-
-    PLOG_VERBOSE << "IPC header = " << std::hex << header.raw;
-
-    if ((header.numX | header.numA | header.numB | header.numW) != 0) {
-        PLOG_FATAL << "Unimplemented buffer descriptors";
-
-        exit(0);
-    }
-
-    if (header.hasHandleDescriptor != 0) {
-        HandleDescriptor handleDescriptor{.raw = ipcBuffer.read<u32>()};
-
-        PLOG_VERBOSE << "Handle descriptor = " << std::hex << handleDescriptor.raw;
-
-        if (handleDescriptor.sendPID != 0) {
-            PLOG_VERBOSE << "PID = " << std::hex << ipcBuffer.read<u32>();
-        }
-
-        for (u32 copyHandle = 0; copyHandle < handleDescriptor.numCopyHandles; copyHandle++) {
-            PLOG_VERBOSE << "Copy handle " << std::hex << ipcBuffer.read<u32>();
-        }
-
-        for (u32 moveHandle = 0; moveHandle < handleDescriptor.numMoveHandles; moveHandle++) {
-            PLOG_VERBOSE << "Move handle " << std::hex << ipcBuffer.read<u32>();
-        }
-    }
-
-    if (header.type == CommandType::Close) {
+    if (commandType == CommandType::Close) {
         PLOG_INFO << "Closing service session (handle = " << std::hex << handle.raw << ")";
         
         return;
     }
 
-    // Get beginning of raw data
-    ipcBuffer.alignUp();
+    IPCContext reply(ctx.getIPCPointer(), ctx.getService());
 
-    DomainHeader domainHeader{.raw = 0ULL};
-    if (isDomain()) {
-        domainHeader.raw = ipcBuffer.read<u64>();
-
-        // Write domain output header
-        ipcBuffer.retire(sizeof(u64));
-        ipcBuffer.write(0ULL);
-
-        ipcBuffer.advance(sizeof(u64)); // Skip padding
-
-        PLOG_VERBOSE << "Domain header (command = " << std::hex << domainHeader.command << ", input count = " << domainHeader.numInput << ", data payload length = " << domainHeader.dataPayloadLength << ", ID = " << domainHeader.objectID << ")";
-
-        if (domainHeader.numInput != 0) {
-            PLOG_FATAL << "Unimplemented input objects";
-
-            exit(0);
-        }
-
-        switch (domainHeader.command) {
-            case DomainCommand::SendMessage:
-                break;
-            case DomainCommand::CloseVirtualHandle:
-                PLOG_FATAL << "Unimplemented CloseVirtualHandle";
-
-                exit(0);
-            default:
-                PLOG_FATAL << "Invalid domain command";
-
-                exit(0);
-        }
-    }
-
-    u32 *data = (u32 *)ipcBuffer.get();
-
-    // Confirm input header and write output header
-    if (data[DataPayloadOffset::Magic] != INPUT_HEADER_MAGIC) {
-        PLOG_FATAL << "Invalid data payload header (" << std::hex << data[DataPayloadOffset::Magic] << ")";
-
-        exit(0);
-    }
-
-    IPCReply reply;
-
-    Result result;
-    switch (header.type) {
+    switch (commandType) {
         case CommandType::Invalid: // Wow
             PLOG_FATAL << "Invalid IPC type";
 
             exit(0);
         case CommandType::Request:
             {
-                if (isDomain() && ((u32)domainHeader.objectID != context->getHandle().raw)) { // Send command to domain object
-                    KService *service = dynamic_cast<KService *>(kernel::getObject(Handle{.raw = (u32)domainHeader.objectID}));
-            
-                    if (service == NULL) {
-                        PLOG_FATAL << "Invalid domain object";
-
-                        exit(0);
-                    }
-
-                    result = service->handleRequest(data[DataPayloadOffset::Command], &data[DataPayloadOffset::Parameters], reply);
+                const int objectID = (int)ctx.getObjectID();
+                if (ctx.isDomain() && (objectID > 1)) {
+                    ((KServiceSession *)session)->handleRequest(objectID, ctx, reply);
                 } else {
-                    const auto requestFunc = requestFuncMap.find(std::string(name));
-                    if (requestFunc == requestFuncMap.end()) {
-                        PLOG_FATAL << "Request to unimplemented service " << name;
+                    if (session->getHandle().type == HandleType::KService) { // Bypass service table
+                        ((KService *)session)->handleRequest(ctx, reply);
+                    } else {
+                        const auto requestFunc = requestFuncMap.find(std::string(name));
+                        if (requestFunc == requestFuncMap.end()) {
+                            PLOG_FATAL << "Request to unimplemented service " << name;
 
-                        exit(0);
+                            exit(0);
+                        }
+                        
+                        requestFunc->second(ctx, reply);
                     }
-                    
-                    result = requestFunc->second(data[DataPayloadOffset::Command], &data[DataPayloadOffset::Parameters], reply);
                 }
             }
             break;
         case CommandType::Control:
-            return writeOutputHeader(data, handleControl(data[DataPayloadOffset::Command], &data[DataPayloadOffset::Parameters]));
+            return handleControl(ctx, reply);
         default:
-            PLOG_FATAL << "Unimplemented IPC type " << header.type;
+            PLOG_FATAL << "Unimplemented IPC type " << commandType;
 
             exit(0);
     }
 
-    writeOutputHeader(data, result);
-
-    // Skip over command packet
-    ipcBuffer.setOffset(sizeof(u32) * header.dataSize);
-
-    // Write output to memory
-    switch (header.flagsC) {
-        case 0: // No C buffer
-            ipcBuffer.align(16);
-
-            // Note: the reply appears to go after the command packet header
-            // if there is no handle descriptor and the current IPC does not target a domain
-            if (!header.hasHandleDescriptor && !isDomain()) {
-                ipcBuffer.setOffset(sizeof(header.raw));
-            }
-
-            std::memcpy(ipcBuffer.get(), reply.get(), reply.getSize());
-
-            printIPCBuffer(ipcMessage);
-            return;
-        case 1: // Inlined C buffer
-            PLOG_FATAL << "Unimplemented inlined C buffer";
-
-            exit(0);
-        default:
-            break;
-    }
-
-    ipcBuffer.alignUp();
-
-    writeCBuffer(ipcBuffer, reply, header.flagsC - 2);
+    reply.marshal();
 }
 
-Result handleControl(u32 command, u32 *data) {
+void handleControl(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
     switch (command) {
         case Command::ConvertCurrentObjectToDomain:
             {
                 PLOG_INFO << "ConvertCurrentObjectToDomain";
-                
-                if (context->getHandle().type != HandleType::KServiceSession) {
+
+                if (ctx.getService()->getHandle().type != HandleType::KServiceSession) {
                     PLOG_FATAL << "Cannot convert current object to domain";
 
                     exit(0);
                 }
 
-                KServiceSession *serviceSession = (KServiceSession *)context;
+                KServiceSession *serviceSession = (KServiceSession *)ctx.getService();
+
+                reply.makeReply(3);
+                reply.write(KernelResult::Success);
+                reply.write(serviceSession->add(serviceSession->getHandle()));
+
+                reply.marshal();
 
                 serviceSession->makeDomain();
-                serviceSession->add(serviceSession->getHandle());
-
-                data[0] = serviceSession->getHandle().raw; // I think
             }
             break;
         case Command::QueryPointerBufferSize:
-            PLOG_INFO << "QueryPointerBufferSize";
+            PLOG_INFO << "QueryPointerBufferSize (stubbed)";
 
-            data[0] = POINTER_BUFFER_SIZE;
+            reply.makeReply(3);
+            reply.write(KernelResult::Success);
+            reply.write(POINTER_BUFFER_SIZE);
+
+            reply.marshal();
             break;
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
             exit(0);
     }
-
-    return KernelResult::Success;
 }
 
 }

@@ -35,10 +35,11 @@ namespace Command {
     };
 }
 
-Result handleRequest(u32 command, u32 *data, IPCReply &reply) {
+void handleRequest(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
     switch (command) {
         case Command::OpenSession:
-            return cmdOpenSession(data, reply);
+            return cmdOpenSession(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -46,26 +47,24 @@ Result handleRequest(u32 command, u32 *data, IPCReply &reply) {
     }
 }
 
-Result cmdOpenSession(u32 *data, IPCReply &reply) {
-    (void)data;
+void cmdOpenSession(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
 
     PLOG_INFO << "OpenSession";
 
-    const Handle handle = kernel::makeService<APMSession>();
-
-    reply.write(handle.raw);
-
-    return KernelResult::Success;
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeService<APMSession>());
 }
 
 APMSession::APMSession() {}
 
 APMSession::~APMSession() {}
 
-Result APMSession::handleRequest(u32 command, u32 *data, IPCReply &reply) {
-    (void)data;
+void APMSession::handleRequest(IPCContext &ctx, IPCContext &reply) {
     (void)reply;
 
+    const u32 command = ctx.getCommand();
     switch (command) {
         default:
             PLOG_FATAL << "Unimplemented command " << command;

@@ -18,15 +18,15 @@
 
 #pragma once
 
-#include "ipc_reply.hpp"
+#include "ipc.hpp"
 #include "object.hpp"
 #include "types.hpp"
 
 namespace hle::service::apm {
 
-Result handleRequest(u32 command, u32 *data, IPCReply &reply);
+void handleRequest(IPCContext &ctx, IPCContext &reply);
 
-Result cmdOpenSession(u32 *data, IPCReply &reply);
+void cmdOpenSession(IPCContext &ctx, IPCContext &reply);
 
 class APMSession : public KService {
 public:
@@ -37,7 +37,7 @@ public:
         return "IApmSession";
     }
 
-    Result handleRequest(u32 command, u32 *data, IPCReply &reply) override;
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
 };
 
 }
