@@ -38,6 +38,7 @@ static std::map<u64, const char *> serviceNameMap {
     {0x646968, "hid"},
     {0x613A767264766E, "nvdrv:a"},
     {0x7379733a746573, "set:sys"},
+    {0x753A656D6974, "time:u"},
 };
 
 namespace Command {
