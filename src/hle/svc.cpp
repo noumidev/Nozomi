@@ -38,6 +38,7 @@ namespace SupervisorCall {
     enum : u32 {
         SetHeapSize = 0x01,
         QueryMemory = 0x06,
+        MapSharedMemory = 0x13,
         CloseHandle = 0x16,
         GetSystemTick = 0x1E,
         ConnectToNamedPort = 0x1F,
@@ -56,6 +57,7 @@ namespace InfoType {
         HeapRegionSize = 5,
         TotalMemorySize = 6,
         UsedMemorySize = 7,
+        RandomEntropy = 11,
         AslrRegionAddress = 12,
         AslrRegionSize = 13,
         StackRegionAddress = 14,
@@ -74,6 +76,9 @@ void handleSVC(u32 svc) {
             break;
         case SupervisorCall::QueryMemory:
             svcQueryMemory();
+            break;
+        case SupervisorCall::MapSharedMemory:
+            svcMapSharedMemory();
             break;
         case SupervisorCall::CloseHandle:
             svcCloseHandle();
@@ -173,6 +178,13 @@ void svcGetInfo() {
 
             sys::cpu::set(1, sys::memory::getUsedMemorySize());
             break;
+        case InfoType::RandomEntropy:
+            if ((handle.raw != 0) || (subType > 3)) {
+                PLOG_WARNING << "Unexpected handle/sub type for UsedMemorySize";
+            }
+
+            sys::cpu::set(1, 0); // TODO: add proper entropy generation
+            break;
         case InfoType::AslrRegionAddress:
             if ((handle.raw != KernelHandles::CurrentProcess) || (subType != 0)) {
                 PLOG_WARNING << "Unexpected handle/sub type for AslrRegionAddress";
@@ -251,6 +263,31 @@ void svcGetSystemTick() {
     PLOG_INFO << "svcGetSystemTick";
 
     sys::cpu::set(0, sys::cpu::getSystemTicks());
+}
+
+void svcMapSharedMemory() {
+    Handle handle = hle::makeHandle((u32)sys::cpu::get(0));
+    const u64 address = sys::cpu::get(1);
+    const u64 size = sys::cpu::get(2);
+    const u32 permission = (u32)sys::cpu::get(3);
+
+    PLOG_INFO << "svcMapSharedMemory (handle = " << std::hex << handle.raw << ", address = " << address << ", size = " << size << ", permission = " << permission << ")";
+
+    if (!sys::memory::isAligned(address) || !sys::memory::isAligned(size)) {
+        PLOG_FATAL << "Unaligned shared memory address/size";
+
+        exit(0);
+    }
+
+    if (handle.type != HandleType::KSharedMemory) {
+        PLOG_FATAL << "Invalid handle type";
+
+        exit(0);
+    }
+
+    ((KSharedMemory *)kernel::getObject(handle))->map(address, size, permission);
+
+    sys::cpu::set(0, KernelResult::Success);
 }
 
 void svcOutputDebugString() {

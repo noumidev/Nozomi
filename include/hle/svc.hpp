@@ -28,6 +28,7 @@ void svcCloseHandle();
 void svcConnectToNamedPort();
 void svcGetInfo();
 void svcGetSystemTick();
+void svcMapSharedMemory();
 void svcOutputDebugString();
 void svcQueryMemory();
 void svcSendSyncRequest();
