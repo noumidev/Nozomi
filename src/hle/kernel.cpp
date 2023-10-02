@@ -105,6 +105,17 @@ void closeHandle(Handle handle) {
     }
 }
 
+Handle copyHandle(Handle handle) {
+    PLOG_DEBUG << "Copying handle " << std::hex << handle.raw;
+
+    KObject *object = getObject(handle);
+
+    // Increment ref count
+    object->open();
+
+    return table::add(handle.type, object);
+}
+
 KObject *getObject(Handle handle) {
     return table::get(handle);
 }

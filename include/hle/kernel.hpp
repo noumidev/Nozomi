@@ -60,6 +60,7 @@ void destroyServiceSession(Handle handle);
 void destroySession(Handle handle);
 
 void closeHandle(Handle handle);
+Handle copyHandle(Handle handle);
 
 KObject *getObject(Handle handle);
 
