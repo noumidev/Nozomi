@@ -21,10 +21,11 @@
 #include <vector>
 
 #include "handle.hpp"
-#include "ipc_reply.hpp"
 #include "types.hpp"
 
 namespace hle {
+
+class IPCContext;
 
 constexpr int KPORT_NAME_LENGTH = 16;
 
@@ -43,7 +44,9 @@ public:
 
     void makeDomain();
 
-    void add(Handle handle);
+    int add(Handle handle);
+
+    void handleRequest(int objectID, IPCContext &ctx, IPCContext &reply);
 };
 
 // Kernel object base class
@@ -71,17 +74,6 @@ public:
     ~KEvent();
 };
 
-// Service base class (system services don't use this)
-class KService : public KObject {
-public:
-    KService();
-    virtual ~KService();
-
-    virtual const char *getName();
-
-    virtual Result handleRequest(u32 command, u32 *data, IPCReply &reply);
-};
-
 class KPort : public KObject {
     char name[KPORT_NAME_LENGTH];
 
@@ -90,6 +82,17 @@ public:
     ~KPort();
 
     const char *getName();
+};
+
+// Service base class (system services don't use this)
+class KService : public KObject {
+public:
+    KService();
+    virtual ~KService();
+
+    virtual const char *getName();
+
+    virtual void handleRequest(IPCContext &ctx, IPCContext &reply);
 };
 
 class KServiceSession : public KObject, public KDomain {

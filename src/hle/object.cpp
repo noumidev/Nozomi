@@ -18,10 +18,14 @@
 
 #include "object.hpp"
 
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
 #include <plog/Log.h>
+
+#include "ipc.hpp"
+#include "kernel.hpp"
 
 namespace hle {
 
@@ -37,8 +41,22 @@ void KDomain::makeDomain() {
     isDomain = true;
 }
 
-void KDomain::add(Handle handle) {
+int KDomain::add(Handle handle) {
     domainHandles.push_back(handle);
+
+    return domainHandles.size();
+}
+
+void KDomain::handleRequest(int objectID, IPCContext &ctx, IPCContext &reply) {
+    if (objectID > (int)domainHandles.size()) {
+        PLOG_FATAL << "Object ID out of bounds";
+
+        exit(0);
+    }
+
+    assert(objectID != 1); // This is a special case
+
+    ((KService *)kernel::getObject(domainHandles[objectID - 1]))->handleRequest(ctx, reply);
 }
 
 KObject::KObject() : handle(Handle{.raw = 0}), refCount(0) {
@@ -85,9 +103,8 @@ const char *KService::getName() {
     return "Invalid service";
 }
 
-Result KService::handleRequest(u32 command, u32 *data, IPCReply &reply) {
-    (void)command;
-    (void)data;
+void KService::handleRequest(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
     (void)reply;
 
     PLOG_FATAL << "handleRequest not overriden";
