@@ -58,8 +58,9 @@ static std::map<std::string, ServiceFunction> requestFuncMap {
 
 namespace Command {
     enum : u32 {
-        ConvertCurrentObjectToDomain = 0,
-        QueryPointerBufferSize = 3,
+        ConvertCurrentObjectToDomain,
+        CloneCurrentObject = 2,
+        QueryPointerBufferSize,
     };
 }
 
@@ -161,6 +162,17 @@ void handleControl(IPCContext &ctx, IPCContext &reply) {
 
                 serviceSession->makeDomain();
             }
+            break;
+        case Command::CloneCurrentObject:
+            PLOG_INFO << "CloneCurrentObject";
+
+            // TODO: create new object, don't just copy the handle
+
+            reply.makeReply(2, 0, 1, true);
+            reply.write(KernelResult::Success);
+            reply.moveHandle(kernel::copyHandle(ctx.getService()->getHandle()));
+
+            reply.marshal();
             break;
         case Command::QueryPointerBufferSize:
             PLOG_INFO << "QueryPointerBufferSize (stubbed)";
