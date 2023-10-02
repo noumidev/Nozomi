@@ -303,8 +303,7 @@ void *getPointer(u64 vaddr) {
 void map(void *mem, u64 address, u64 pageNum, u32 type, u32 attribute, u32 permission) {
     PLOG_DEBUG << "Mapping " << pageNum << " pages @ " << std::hex << address << " " << getPermissionString(permission);
 
-    MemoryBlock memoryBlock{.baseAddress = address, .size = pageNum, .type = type, .attribute = attribute, .permission = permission, .mem = NULL};
-    memoryBlock.mem = mem;
+    MemoryBlock memoryBlock{.baseAddress = address, .size = pageNum, .type = type, .attribute = attribute, .permission = permission, .mem = mem};
 
     const u64 basePage = address >> PAGE_SHIFT;
 
@@ -313,7 +312,9 @@ void map(void *mem, u64 address, u64 pageNum, u32 type, u32 attribute, u32 permi
             const u64 readPage = page + basePage;
 
             if (readTable[readPage] != NULL) {
-                PLOG_WARNING << "Read page " << std::hex << readPage << " is already mapped!";
+                PLOG_ERROR << "Read page " << std::hex << readPage << " is already mapped!";
+
+                return;
             }
 
             readTable[readPage] = &((u8 *)memoryBlock.mem)[page * PAGE_SIZE];
@@ -325,7 +326,9 @@ void map(void *mem, u64 address, u64 pageNum, u32 type, u32 attribute, u32 permi
             const u64 writePage = page + basePage;
 
             if (writeTable[writePage] != NULL) {
-                PLOG_WARNING << "Write page " << std::hex << writePage << " is already mapped!";
+                PLOG_ERROR << "Write page " << std::hex << writePage << " is already mapped!";
+
+                return;
             }
 
             writeTable[writePage] = &((u8 *)memoryBlock.mem)[page * PAGE_SIZE];
