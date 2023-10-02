@@ -40,9 +40,11 @@ set(SOURCES
     src/hle/svc.cpp
     src/hle/service/apm.cpp
     src/hle/service/applet_oe.cpp
+    src/hle/service/fsp_srv.cpp
     src/hle/service/hid.cpp
     src/hle/service/set_sys.cpp
     src/hle/service/sm.cpp
+    src/hle/service/time.cpp
     src/loader/loader.cpp
     src/loader/nro.cpp
     src/sys/cpu.cpp
@@ -63,9 +65,11 @@ set(HEADERS
     include/hle/svc.hpp
     include/hle/service/apm.hpp
     include/hle/service/applet_oe.hpp
+    include/hle/service/fsp_srv.hpp
     include/hle/service/hid.hpp
     include/hle/service/set_sys.hpp
     include/hle/service/sm.hpp
+    include/hle/service/time.hpp
     include/loader/loader.hpp
     include/loader/nro.hpp
     include/sys/cpu.hpp
