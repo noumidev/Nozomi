@@ -115,4 +115,20 @@ public:
     Handle getPortHandle();
 };
 
+class KSharedMemory : public KObject {
+    u64 size;
+
+    void *mem;
+
+public:
+    KSharedMemory(u64 size);
+    ~KSharedMemory();
+
+    u64 getSize();
+
+    void *getMem();
+
+    void map(u64 address, u64 size, u32 permission);
+};
+
 }

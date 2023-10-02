@@ -75,6 +75,16 @@ Handle makeSession(Handle portHandle) {
     return handle;
 }
 
+Handle makeSharedMemory(u64 size) {
+    const Handle handle = table::add(HandleType::KSharedMemory, new KSharedMemory(size));
+
+    ((KSharedMemory *)table::getLast())->setHandle(handle);
+
+    PLOG_DEBUG << "Making KSharedMemory (size = " << std::hex << size << ", handle = " << handle.raw << ")";
+
+    return handle;
+}
+
 void destroyServiceSession(Handle handle) {
     PLOG_DEBUG << "Destroying KServiceSession (handle = " << std::hex << handle.raw << ")";
 

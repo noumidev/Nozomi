@@ -39,6 +39,7 @@ namespace HandleType {
         KService,
         KServiceSession,
         KSession,
+        KSharedMemory,
         KThread, // Does not exist yet
         NumHandleTypes,
     };

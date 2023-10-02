@@ -36,6 +36,7 @@ Handle makeEvent(bool autoClear);
 Handle makePort(const char *name);
 Handle makeServiceSession(const char *name);
 Handle makeSession(Handle portHandle);
+Handle makeSharedMemory(u64 size);
 
 template<typename T>
 Handle makeService() {

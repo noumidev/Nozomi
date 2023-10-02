@@ -144,4 +144,34 @@ Handle KSession::getPortHandle() {
     return portHandle;
 }
 
+KSharedMemory::KSharedMemory(u64 size) : size(size) {
+    mem = malloc(size);
+}
+
+KSharedMemory::~KSharedMemory() {}
+
+u64 KSharedMemory::getSize() {
+    return size;
+}
+
+void *KSharedMemory::getMem() {
+    return mem;
+}
+
+void KSharedMemory::map(u64 address, u64 size, u32 permission) {
+    open();
+
+    if (address == 0) {
+        PLOG_WARNING << "Address is NULL";
+    }
+
+    if (size != this->size) {
+        PLOG_FATAL << "Size mismatch";
+
+        exit(0);
+    }
+
+    sys::memory::map(mem, address, size >> sys::memory::PAGE_SHIFT, 0, 0, permission);
+}
+
 }
