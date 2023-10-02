@@ -34,6 +34,12 @@ namespace Command {
     };
 }
 
+namespace AppletResourceCommand {
+    enum : u32 {
+        GetSharedMemoryHandle,
+    };
+}
+
 Handle appletResource{.raw = 0ULL};
 
 void handleRequest(IPCContext &ctx, IPCContext &reply) {
@@ -70,15 +76,31 @@ AppletResource::AppletResource() {}
 AppletResource::~AppletResource() {}
 
 void AppletResource::handleRequest(IPCContext &ctx, IPCContext &reply) {
-    (void)reply;
-
     const u32 command = ctx.getCommand();
     switch (command) {
+        case AppletResourceCommand::GetSharedMemoryHandle:
+            return cmdGetSharedMemoryHandle(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
             exit(0);
     }
+}
+
+void AppletResource::cmdGetSharedMemoryHandle(IPCContext &ctx, IPCContext &reply) {
+    constexpr u64 SHARED_MEMORY_SIZE = 0x40000;
+
+    (void)ctx;
+
+    PLOG_INFO << "GetSharedMemoryHandle";
+
+    if (sharedMemory.type == HandleType::None) {
+        sharedMemory = kernel::makeSharedMemory(SHARED_MEMORY_SIZE);
+    }
+
+    reply.makeReply(2, 1);
+    reply.write(KernelResult::Success);
+    reply.copyHandle(sharedMemory);
 }
 
 }

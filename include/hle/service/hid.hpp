@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "handle.hpp"
 #include "ipc.hpp"
 #include "object.hpp"
 #include "types.hpp"
@@ -29,6 +30,8 @@ void handleRequest(IPCContext &ctx, IPCContext &reply);
 void cmdCreateAppletResource(IPCContext &ctx, IPCContext &reply);
 
 class AppletResource : public KService {
+    Handle sharedMemory;
+
 public:
     AppletResource();
     ~AppletResource();
@@ -38,6 +41,8 @@ public:
     }
 
     void handleRequest(IPCContext &ctx, IPCContext &reply) override;
+
+    void cmdGetSharedMemoryHandle(IPCContext &ctx, IPCContext &reply);
 };
 
 }
