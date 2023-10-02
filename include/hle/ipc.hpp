@@ -409,12 +409,18 @@ public:
 
         alignData();
 
-        if (isDomain()) {
+        if (isDomain() && (header.type == CommandType::Request)) {
             domainHeaderOffset = getOffset();
 
             domainHeader.raw = read<u64>();
 
             PLOG_VERBOSE << "Domain header (command = " << domainHeader.command << ", input objects = " << std::hex << domainHeader.numInput << ", data payload length = " << domainHeader.dataPayloadLength << ", object ID = " << domainHeader.objectID << ")";
+
+            if ((domainHeader.command != DomainCommand::SendMessage) && (domainHeader.command != DomainCommand::CloseVirtualHandle)) {
+                PLOG_FATAL << "Invalid domain command";
+
+                exit(0);
+            }
 
             if (domainHeader.numInput != 0) {
                 PLOG_FATAL << "Unimplemented input objects";
@@ -470,13 +476,13 @@ public:
         }
     }
 
-    void makeReply(u64 numParams, u32 numCopyHandles = 0, u32 numMoveHandles = 0) {
+    void makeReply(u64 numParams, u32 numCopyHandles = 0, u32 numMoveHandles = 0, bool forceMove = false) {
         header.type = CommandType::Invalid; // Shouldn't matter
 
         advance(sizeof(header.raw));
 
         u32 moveHandles = 0;
-        if (!isDomain()) {
+        if (!isDomain() || forceMove) {
             moveHandles = numMoveHandles;
         } else {
             numDomainObjects = numMoveHandles;
@@ -494,7 +500,7 @@ public:
 
         alignUp(16);
 
-        if (isDomain()) {
+        if (isDomain() && !forceMove) {
             domainHeaderOffset = getOffset();
 
             // Write output header
