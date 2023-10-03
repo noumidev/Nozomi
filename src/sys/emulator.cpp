@@ -22,6 +22,7 @@
 #include "kernel.hpp"
 #include "loader.hpp"
 #include "memory.hpp"
+#include "nvflinger.hpp"
 
 namespace sys::emulator {
 
@@ -30,6 +31,7 @@ constexpr u64 CYCLES_PER_FRAME = cpu::CPU_CLOCK / 60;
 void init(const char *path) {
     cpu::init();
     hle::kernel::init();
+    nvidia::nvflinger::init();
 
     // Load executable
     loader::load(path);

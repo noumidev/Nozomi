@@ -20,6 +20,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include/common)
 include_directories(${PROJECT_SOURCE_DIR}/include/hle)
 include_directories(${PROJECT_SOURCE_DIR}/include/hle/service)
 include_directories(${PROJECT_SOURCE_DIR}/include/loader)
+include_directories(${PROJECT_SOURCE_DIR}/include/nvidia)
 include_directories(${PROJECT_SOURCE_DIR}/include/sys)
 include_directories(${PROJECT_SOURCE_DIR}/external/dynarmic)
 include_directories(${PROJECT_SOURCE_DIR}/external/plog)
@@ -45,8 +46,10 @@ set(SOURCES
     src/hle/service/set_sys.cpp
     src/hle/service/sm.cpp
     src/hle/service/time.cpp
+    src/hle/service/vi.cpp
     src/loader/loader.cpp
     src/loader/nro.cpp
+    src/nvidia/nvflinger.cpp
     src/sys/cpu.cpp
     src/sys/emulator.cpp
     src/sys/memory.cpp
@@ -70,8 +73,10 @@ set(HEADERS
     include/hle/service/set_sys.hpp
     include/hle/service/sm.hpp
     include/hle/service/time.hpp
+    include/hle/service/vi.hpp
     include/loader/loader.hpp
     include/loader/nro.hpp
+    include/nvidia/nvflinger.hpp
     include/sys/cpu.hpp
     include/sys/emulator.hpp
     include/sys/memory.hpp
