@@ -39,6 +39,7 @@
 #include "set_sys.hpp"
 #include "sm.hpp"
 #include "time.hpp"
+#include "vi.hpp"
 
 namespace hle::ipc {
 
@@ -54,6 +55,7 @@ static std::map<std::string, ServiceFunction> requestFuncMap {
     {std::string("set:sys"), &service::set_sys::handleRequest},
     {std::string("sm:"), &service::sm::handleRequest},
     {std::string("time:u"), &service::time::handleRequest},
+    {std::string("vi:m"), &service::vi::managerHandleRequest},
 };
 
 namespace Command {
@@ -162,7 +164,7 @@ void handleControl(IPCContext &ctx, IPCContext &reply) {
 
                 serviceSession->makeDomain();
             }
-            break;
+            return;
         case Command::CloneCurrentObject:
             PLOG_INFO << "CloneCurrentObject";
 
@@ -171,8 +173,6 @@ void handleControl(IPCContext &ctx, IPCContext &reply) {
             reply.makeReply(2, 0, 1, true);
             reply.write(KernelResult::Success);
             reply.moveHandle(kernel::copyHandle(ctx.getService()->getHandle()));
-
-            reply.marshal();
             break;
         case Command::QueryPointerBufferSize:
             PLOG_INFO << "QueryPointerBufferSize (stubbed)";
@@ -180,14 +180,14 @@ void handleControl(IPCContext &ctx, IPCContext &reply) {
             reply.makeReply(3);
             reply.write(KernelResult::Success);
             reply.write(POINTER_BUFFER_SIZE);
-
-            reply.marshal();
             break;
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
             exit(0);
     }
+
+    reply.marshal();
 }
 
 }
