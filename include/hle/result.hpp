@@ -25,6 +25,7 @@ namespace hle {
 namespace KernelResult {
     enum : Result {
         Success = 0,
+        PortSdCardNoDevice = 0xFA202,
     };
 }
 

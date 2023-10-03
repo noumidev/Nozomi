@@ -24,6 +24,7 @@ namespace hle::service::fsp_srv {
 
 void handleRequest(IPCContext &ctx, IPCContext &reply);
 
+void cmdOpenSdCardFileSystem(IPCContext &ctx, IPCContext &reply);
 void cmdSetCurrentProcess(IPCContext &ctx, IPCContext &reply);
 
 }

@@ -27,6 +27,7 @@ namespace hle::service::fsp_srv {
 namespace Command {
     enum : u32 {
         SetCurrentProcess = 1,
+        OpenSdCardFileSystem = 18,
     };
 }
 
@@ -35,11 +36,22 @@ void handleRequest(IPCContext &ctx, IPCContext &reply) {
     switch (command) {
         case Command::SetCurrentProcess:
             return cmdSetCurrentProcess(ctx, reply);
+        case Command::OpenSdCardFileSystem:
+            return cmdOpenSdCardFileSystem(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
             exit(0);
     }
+}
+
+void cmdOpenSdCardFileSystem(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
+
+    PLOG_INFO << "OpenSdCardFileSystem (stubbed)";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::PortSdCardNoDevice);
 }
 
 void cmdSetCurrentProcess(IPCContext &ctx, IPCContext &reply) {
