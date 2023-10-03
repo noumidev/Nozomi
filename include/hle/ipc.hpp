@@ -118,6 +118,28 @@ struct DataPayloadHeader {
     u32 command;
 };
 
+struct BufferDescriptor {
+    u32 raw[3];
+
+    // This is actually so bad
+    u64 getAddress() {
+        const u64 mid = ((u64)raw[2] >> 28) & 15;
+        const u64 top = ((u64)raw[2] >> 2) & 7;
+
+        return (u64)raw[1] | (mid << 32) | (top << 36);
+    }
+
+    u32 getFlags() {
+        return raw[2] & 3;
+    }
+
+    u64 getSize() {
+        const u64 top = ((u64)raw[2] >> 24) & 15;
+
+        return (u64)raw[0] | (top << 32);
+    }
+};
+
 union CBufferDescriptor {
     u64 raw;
     struct {
@@ -396,9 +418,13 @@ public:
         }
 
         if (header.numB > 0) {
-            PLOG_FATAL << "Unimplemented B buffer descriptors";
+            pointerDescriptorOffset[PointerBuffer::B] = getOffset();
+    
+            for (u64 descriptor = 0; descriptor < header.numB; descriptor++) {
+                BufferDescriptor b{.raw[0] = read<u32>(), .raw[1] = read<u32>(), .raw[2] = read<u32>()};
 
-            exit(0);
+                PLOG_VERBOSE << "B buffer descriptor " << descriptor << " (address = " << std::hex << b.getAddress() << ", size = " << b.getSize() << ", flags = " << b.getFlags() << ")";
+            }
         }
 
         if (header.numW > 0) {
