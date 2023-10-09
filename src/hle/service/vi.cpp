@@ -20,6 +20,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <ios>
 
 #include <plog/Log.h>
 
@@ -45,6 +46,12 @@ namespace ApplicationDisplayServiceCommand {
         GetManagerDisplayService,
         GetIndirectDisplayTransactionService,
         OpenDisplay = 1010,
+    };
+}
+
+namespace ManagerDisplayServiceCommand {
+    enum : u32 {
+        CreateStrayLayer = 2012,
     };
 }
 
@@ -150,15 +157,36 @@ ManagerDisplayService::ManagerDisplayService() {}
 ManagerDisplayService::~ManagerDisplayService() {}
 
 void ManagerDisplayService::handleRequest(IPCContext &ctx, IPCContext &reply) {
-    (void)reply;
-
     const u32 command = ctx.getCommand();
     switch (command) {
+        case ManagerDisplayServiceCommand::CreateStrayLayer:
+            return cmdCreateStrayLayer(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
             exit(0);
     }
+}
+
+void ManagerDisplayService::cmdCreateStrayLayer(IPCContext &ctx, IPCContext &reply) {
+    u8 *data = (u8 *)ctx.getData();
+
+    u32 flags;
+    u64 displayID;
+
+    std::memcpy(&flags, data, sizeof(flags));
+    std::memcpy(&displayID, &data[8], sizeof(displayID));
+
+    PLOG_INFO << "CreateStrayLayer (flags = " << std::hex << flags << ", display ID = " << displayID << ")";
+
+    const u64 layerID = nvflinger::makeLayer(displayID);
+    (void)layerID;
+
+    exit(0);
+
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeService<HOSDriverBinder>());
 }
 
 SystemDisplayService::SystemDisplayService() {}

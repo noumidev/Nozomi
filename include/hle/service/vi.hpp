@@ -47,6 +47,8 @@ public:
 };
 
 class ManagerDisplayService : public KService {
+    void cmdCreateStrayLayer(IPCContext &ctx, IPCContext &reply);
+
 public:
     ManagerDisplayService();
     ~ManagerDisplayService();
