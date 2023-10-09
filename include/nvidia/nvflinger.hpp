@@ -20,6 +20,7 @@
 
 #include <array>
 #include <cstring>
+#include <vector>
 
 #include "ipc.hpp"
 #include "object.hpp"
@@ -40,10 +41,22 @@ inline DisplayName makeDisplayName(const char *name) {
     return displayName;
 }
 
+class Layer {
+    u64 id;
+
+public:
+    Layer(u64 id);
+    ~Layer();
+
+    u64 getID();
+};
+
 class Display {
     DisplayName name;
 
     u64 id;
+
+    std::vector<Layer> layers;
 
 public:
     Display(DisplayName name, u64 id);
@@ -52,6 +65,8 @@ public:
     DisplayName getName();
 
     u64 getID();
+
+    void makeLayer(u64 id);
 };
 
 class HOSDriverBinder : public KService {
@@ -71,5 +86,7 @@ void init();
 void makeDisplay(DisplayName name);
 
 u64 openDisplay(DisplayName name);
+
+u64 makeLayer(u64 displayID);
 
 }

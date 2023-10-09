@@ -19,7 +19,6 @@
 #include "nvflinger.hpp"
 
 #include <cstdlib>
-#include <vector>
 
 #include <plog/Log.h>
 
@@ -39,6 +38,16 @@ void makeDisplay(DisplayName name) {
     displays.emplace_back(Display(name, displayID++));
 }
 
+Display *getDisplay(u64 id) {
+    if (id > displays.size()) {
+        PLOG_FATAL << "Invalid display ID";
+
+        exit(0);
+    }
+
+    return &displays[id];
+}
+
 u64 openDisplay(DisplayName name) {
     PLOG_DEBUG << "Opening display (name = " << name.data() << ")";
 
@@ -53,6 +62,24 @@ u64 openDisplay(DisplayName name) {
     exit(0);
 }
 
+u64 makeLayer(u64 displayID) {
+    static u64 layerID = 0;
+
+    PLOG_DEBUG << "Making layer (display ID = " << displayID << ")";
+
+    getDisplay(displayID)->makeLayer(layerID);
+
+    return layerID++;
+}
+
+Layer::Layer(u64 id) : id(id) {}
+
+Layer::~Layer() {}
+
+u64 Layer::getID() {
+    return id;
+}
+
 Display::Display(DisplayName name, u64 id) : name(name), id(id) {}
 
 Display::~Display() {}
@@ -63,6 +90,10 @@ DisplayName Display::getName() {
 
 u64 Display::getID() {
     return id;
+}
+
+void Display::makeLayer(u64 id) {
+    layers.emplace_back(Layer(id));
 }
 
 HOSDriverBinder::HOSDriverBinder() {}
