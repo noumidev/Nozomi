@@ -421,7 +421,10 @@ public:
             pointerDescriptorOffset[PointerBuffer::B] = getOffset();
     
             for (u64 descriptor = 0; descriptor < header.numB; descriptor++) {
-                BufferDescriptor b{.raw[0] = read<u32>(), .raw[1] = read<u32>(), .raw[2] = read<u32>()};
+                BufferDescriptor b;
+                b.raw[0] = read<u32>();
+                b.raw[1] = read<u32>();
+                b.raw[2] = read<u32>();
 
                 PLOG_VERBOSE << "B buffer descriptor " << descriptor << " (address = " << std::hex << b.getAddress() << ", size = " << b.getSize() << ", flags = " << b.getFlags() << ")";
             }
