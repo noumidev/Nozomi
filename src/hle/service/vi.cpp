@@ -25,13 +25,17 @@
 #include <plog/Log.h>
 
 #include "nvflinger.hpp"
+#include "parcel.hpp"
 #include "result.hpp"
 
 namespace hle::service::vi {
 
+using android::parcel::Parcel;
+
 using namespace nvidia;
-using nvidia::nvflinger::DisplayName;
+using nvflinger::DisplayName;
 using nvflinger::HOSDriverBinder;
+using nvflinger::NativeWindow;
 
 namespace ManagerCommand {
     enum : u32 {
@@ -46,6 +50,7 @@ namespace ApplicationDisplayServiceCommand {
         GetManagerDisplayService,
         GetIndirectDisplayTransactionService,
         OpenDisplay = 1010,
+        SetLayerScalingMode = 2101,
     };
 }
 
@@ -53,6 +58,29 @@ namespace ManagerDisplayServiceCommand {
     enum : u32 {
         CreateStrayLayer = 2012,
     };
+}
+
+namespace VIScalingMode {
+    enum : u64 {
+        None,
+        FitToLayer = 2,
+        PreserveAspectRatio = 4,
+    };
+}
+
+const char *getScalingModeName(u64 scalingMode) {
+    switch (scalingMode) {
+        case VIScalingMode::None:
+            return "None";
+        case VIScalingMode::FitToLayer:
+            return "Fit to Layer";
+        case VIScalingMode::PreserveAspectRatio:
+            return "Preserve Aspect Ratio";
+        default:
+            PLOG_FATAL << "Invalid scaling mode";
+
+            exit(0);
+    }
 }
 
 // vi:m
@@ -95,6 +123,8 @@ void ApplicationDisplayService::handleRequest(IPCContext &ctx, IPCContext &reply
             return cmdGetIndirectDisplayTransactionService(ctx, reply);
         case ApplicationDisplayServiceCommand::OpenDisplay:
             return cmdOpenDisplay(ctx, reply);
+        case ApplicationDisplayServiceCommand::SetLayerScalingMode:
+            return cmdSetLayerScalingMode(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -152,6 +182,19 @@ void ApplicationDisplayService::cmdOpenDisplay(IPCContext &ctx, IPCContext &repl
     reply.write(nvflinger::openDisplay(name));
 }
 
+void ApplicationDisplayService::cmdSetLayerScalingMode(IPCContext &ctx, IPCContext &reply) {
+    const u8 *data = (u8 *)ctx.getData();
+
+    u64 scalingMode, layerID;
+    std::memcpy(&scalingMode, data, sizeof(u64));
+    std::memcpy(&layerID, &data[8], sizeof(u64));
+
+    PLOG_INFO << "SetLayerScalingMode (Scaling mode = " << getScalingModeName(scalingMode) << ", layer ID = " << layerID << ") (stubbed)";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
+}
+
 ManagerDisplayService::ManagerDisplayService() {}
 
 ManagerDisplayService::~ManagerDisplayService() {}
@@ -179,14 +222,21 @@ void ManagerDisplayService::cmdCreateStrayLayer(IPCContext &ctx, IPCContext &rep
 
     PLOG_INFO << "CreateStrayLayer (flags = " << std::hex << flags << ", display ID = " << displayID << ")";
 
+    /* Thanks to Yuzu for this */
+
     const u64 layerID = nvflinger::makeLayer(displayID);
-    (void)layerID;
+    const u32 bufferQueueID = nvflinger::getBufferQueueID(displayID, layerID);
 
-    exit(0);
+    Parcel parcel;
 
-    reply.makeReply(2, 0, 1);
+    parcel.writeObject(NativeWindow(bufferQueueID).serialize());
+
+    const u64 size = ctx.writeB(parcel.serialize());
+
+    reply.makeReply(6);
     reply.write(KernelResult::Success);
-    reply.moveHandle(kernel::makeService<HOSDriverBinder>());
+    reply.write(layerID);
+    reply.write(size);
 }
 
 SystemDisplayService::SystemDisplayService() {}

@@ -34,6 +34,7 @@ class ApplicationDisplayService : public KService {
     void cmdGetRelayService(IPCContext &ctx, IPCContext &reply);
     void cmdGetSystemDisplayService(IPCContext &ctx, IPCContext &reply);
     void cmdOpenDisplay(IPCContext &ctx, IPCContext &reply);
+    void cmdSetLayerScalingMode(IPCContext &ctx, IPCContext &reply);
 
 public:
     ApplicationDisplayService();
