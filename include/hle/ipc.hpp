@@ -173,6 +173,7 @@ class IPCContext {
     u32 pid;
     std::vector<Handle> copyHandles, moveHandles;
 
+    std::vector<BufferDescriptor> bDescriptors;
     std::vector<CBufferDescriptor> receiveDescriptors;
 
     // Offsets
@@ -423,6 +424,8 @@ public:
             for (u64 descriptor = 0; descriptor < header.numB; descriptor++) {
                 BufferDescriptor b{.raw[0] = read<u32>(), .raw[1] = read<u32>(), .raw[2] = read<u32>()};
 
+                bDescriptors.push_back(b);
+
                 PLOG_VERBOSE << "B buffer descriptor " << descriptor << " (address = " << std::hex << b.getAddress() << ", size = " << b.getSize() << ", flags = " << b.getFlags() << ")";
             }
         }
@@ -559,6 +562,26 @@ public:
         }
 
         std::memcpy(sys::memory::getPointer(receiveDescriptors[0].address), output.data(), std::min(receiveDescriptors[0].size, (u64)output.size()));
+    }
+
+    u64 writeB(const std::vector<u8> &output) {
+        if (header.numB == 0) {
+            PLOG_FATAL << "No receive buffers";
+
+            exit(0);
+        }
+
+        BufferDescriptor &d = bDescriptors[0];
+
+        if (output.size() > d.getSize()) {
+            PLOG_WARNING << "Output size larger than buffer";
+        }
+
+        const u64 size = std::min((u64)output.size(), d.getSize());
+
+        std::memcpy(sys::memory::getPointer(d.getAddress()), output.data(), size);
+
+        return size;
     }
 };
 
