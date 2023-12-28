@@ -16,6 +16,7 @@ project(Nozomi CXX)
 
 # Set include directories
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include/android)
 include_directories(${PROJECT_SOURCE_DIR}/include/common)
 include_directories(${PROJECT_SOURCE_DIR}/include/hle)
 include_directories(${PROJECT_SOURCE_DIR}/include/hle/service)
@@ -57,6 +58,8 @@ set(SOURCES
 
 # Set header files
 set(HEADERS
+    include/android/buffer_queue.hpp
+    include/android/parcel.hpp
     include/common/types.hpp
     include/hle/handle.hpp
     include/hle/handle_table.hpp
