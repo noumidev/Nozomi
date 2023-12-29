@@ -43,12 +43,14 @@ inline DisplayName makeDisplayName(const char *name) {
 
 class Layer {
     u64 id;
+    u32 bufferQueueID;
 
 public:
     Layer(u64 id);
     ~Layer();
 
     u64 getID();
+    u32 getBufferQueueID();
 };
 
 class Display {
@@ -66,10 +68,15 @@ public:
 
     u64 getID();
 
+    Layer *getLayer(u64 layerID);
+
     void makeLayer(u64 id);
 };
 
 class HOSDriverBinder : public KService {
+    i32 strongRefcount, weakRefcount;
+
+    void cmdAdjustRefcount(IPCContext &ctx, IPCContext &reply);
 public:
     HOSDriverBinder();
     ~HOSDriverBinder();
@@ -81,12 +88,32 @@ public:
     void handleRequest(IPCContext &ctx, IPCContext &reply) override;
 };
 
+class NativeWindow {
+    static constexpr size_t SIZE = 0x28;
+
+    static constexpr u32 MAGIC = 2;
+    static constexpr u32 PROCESS_ID = 1;
+
+    static constexpr const char *DISPDRV_NAME = "dispdrv";
+
+    u64 bufferQueueID;
+
+public:
+    NativeWindow(u32 bufferQueueID);
+    ~NativeWindow();
+
+    std::vector<u8> serialize();
+};
+
 void init();
 
 void makeDisplay(DisplayName name);
 
 u64 openDisplay(DisplayName name);
 
+u32 makeBufferQueue();
 u64 makeLayer(u64 displayID);
+
+u32 getBufferQueueID(u64 displayID, u64 layerID);
 
 }

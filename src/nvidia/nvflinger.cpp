@@ -19,12 +19,27 @@
 #include "nvflinger.hpp"
 
 #include <cstdlib>
+#include <cstring>
 
 #include <plog/Log.h>
 
+#include "buffer_queue.hpp"
+#include "result.hpp"
+
 namespace nvidia::nvflinger {
 
+using android::buffer_queue::BufferQueue;
+
+using namespace hle;
+
+namespace HOSDriverBinderCommand {
+    enum : u32 {
+        AdjustRefcount = 1,
+    };
+}
+
 std::vector<Display> displays;
+std::vector<BufferQueue> bufferQueues;
 
 void init() {
     makeDisplay(makeDisplayName("Default"));
@@ -62,6 +77,16 @@ u64 openDisplay(DisplayName name) {
     exit(0);
 }
 
+u32 makeBufferQueue() {
+    static u32 bufferQueueID = 0;
+
+    PLOG_DEBUG << "Making buffer queue";
+
+    bufferQueues.emplace_back(BufferQueue{});
+
+    return bufferQueueID++;
+}
+
 u64 makeLayer(u64 displayID) {
     static u64 layerID = 0;
 
@@ -72,12 +97,20 @@ u64 makeLayer(u64 displayID) {
     return layerID++;
 }
 
-Layer::Layer(u64 id) : id(id) {}
+u32 getBufferQueueID(u64 displayID, u64 layerID) {
+    return getDisplay(displayID)->getLayer(layerID)->getBufferQueueID();
+}
+
+Layer::Layer(u64 id) : id(id), bufferQueueID(makeBufferQueue()) {}
 
 Layer::~Layer() {}
 
 u64 Layer::getID() {
     return id;
+}
+
+u32 Layer::getBufferQueueID() {
+    return bufferQueueID;
 }
 
 Display::Display(DisplayName name, u64 id) : name(name), id(id) {}
@@ -92,11 +125,23 @@ u64 Display::getID() {
     return id;
 }
 
+Layer *Display::getLayer(u64 layerID) {
+    for (auto &layer : layers) {
+        if (layer.getID() == layerID) {
+            return &layer;
+        }
+    }
+
+    PLOG_FATAL << "Unable to find layer with ID " << layerID;
+
+    exit(0);
+}
+
 void Display::makeLayer(u64 id) {
     layers.emplace_back(Layer(id));
 }
 
-HOSDriverBinder::HOSDriverBinder() {}
+HOSDriverBinder::HOSDriverBinder() : strongRefcount(0), weakRefcount(0) {}
 
 HOSDriverBinder::~HOSDriverBinder() {}
 
@@ -105,11 +150,63 @@ void HOSDriverBinder::handleRequest(IPCContext &ctx, IPCContext &reply) {
 
     const u32 command = ctx.getCommand();
     switch (command) {
+        case HOSDriverBinderCommand::AdjustRefcount:
+            cmdAdjustRefcount(ctx, reply);
+            break;
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
             exit(0);
     }
+}
+
+void HOSDriverBinder::cmdAdjustRefcount(IPCContext &ctx, IPCContext &reply) {
+    const u8 *data = (u8 *)ctx.getData();
+
+    i32 id, addval, type;
+    std::memcpy(&id, &data[0], sizeof(i32));
+    std::memcpy(&addval, &data[4], sizeof(i32));
+    std::memcpy(&type, &data[8], sizeof(i32));
+
+    PLOG_INFO << "AdjustRefcount (ID = " << id << ", addval = " << addval << ", type = " << type << ")";
+
+    if ((type < 0) || (type > 1)) {
+        PLOG_FATAL << "Invalid type";
+
+        exit(0);
+    }
+
+    const bool adjustWeak = type == 0;
+    if (adjustWeak) {
+        weakRefcount += addval;
+
+        PLOG_DEBUG << "New weak refcount = " << weakRefcount;
+    } else {
+        strongRefcount += addval;
+
+        PLOG_DEBUG << "New strong refcount = " << strongRefcount;
+    }
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
+}
+
+NativeWindow::NativeWindow(u32 bufferQueueID) : bufferQueueID((u64)bufferQueueID) {}
+
+NativeWindow::~NativeWindow() {}
+
+std::vector<u8> NativeWindow::serialize() {
+    std::vector<u8> data;
+
+    data.resize(SIZE);
+
+    // NativeWindow binary format (https://github.com/yuzu-emu/yuzu/blob/12178c694ab20898c2d007e0efb30a28d1aee100/src/core/hle/service/vi/vi.cpp#L68-L73)
+    std::memcpy(&data[0x00], &MAGIC, sizeof(MAGIC));
+    std::memcpy(&data[0x04], &PROCESS_ID, sizeof(PROCESS_ID));
+    std::memcpy(&data[0x08], &bufferQueueID, sizeof(bufferQueueID));
+    std::memcpy(&data[0x10], DISPDRV_NAME, 8);
+
+    return data;
 }
 
 }
