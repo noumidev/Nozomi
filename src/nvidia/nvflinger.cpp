@@ -226,14 +226,11 @@ void HOSDriverBinder::cmdTransactParcelAuto(IPCContext &ctx, IPCContext &reply) 
 
     i32 id;
     u32 code, flags;
-    u64 parcelData, parcelReply;
     std::memcpy(&id, &data[0], sizeof(i32));
     std::memcpy(&code, &data[4], sizeof(u32));
-    std::memcpy(&parcelData, &data[8], sizeof(u64));
-    std::memcpy(&parcelReply, &data[16], sizeof(u64));
-    std::memcpy(&flags, &data[20], sizeof(u32));
+    std::memcpy(&flags, &data[8], sizeof(u32));
 
-    PLOG_INFO << "cmdTransactParcelAuto (ID = " << id << ", code = " << code << ", data parcel = " << std::hex << parcelData << ", reply parcel = " << parcelReply << ", flags = " << flags << ")";
+    PLOG_INFO << "cmdTransactParcelAuto (ID = " << id << ", code = " << code << ", flags = " << std::hex << flags << ")";
 
     PLOG_FATAL << "Unimplemented TransactParcel";
 
