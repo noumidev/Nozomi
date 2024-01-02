@@ -38,14 +38,47 @@ namespace Code {
     };
 }
 
-void connect(Parcel &in, Parcel &out) {
+using Status = i32;
+
+namespace StatusCode {
+    enum : Status {
+        NoError,
+    };
+}
+
+namespace NativeWindowAPI {
+    enum : u32 {
+        CPU = 2,
+    };
+}
+
+Status connect(Parcel &in, Parcel &out) {
     const bool enableListener = in.read<u32>() == 1;
     const u32 api = in.read<u32>();
     const bool producerControlledByApp = in.read<u32>() == 1;
 
     PLOG_VERBOSE << "CONNECT (Enable listener = " << enableListener << ", API = " << api << ", producer controlled by app = " << producerControlledByApp << ")";
 
-    nvidia::nvflinger::connect(enableListener, api, producerControlledByApp, out);
+    if (enableListener) {
+        PLOG_ERROR << "Unimplemented listener";
+
+        exit(0);
+    }
+
+    switch (api) {
+        case NativeWindowAPI::CPU:
+            out.write(0);
+            out.write(0);
+            out.write(0);
+            out.write(0);
+            break;
+        default:
+            PLOG_ERROR << "Unimplemented native window API " << api;
+
+            exit(0);
+    }
+    
+    return StatusCode::NoError;
 }
 
 // https://android.googlesource.com/platform/frameworks/native/+/29a3e90879fd96404c971e7187cd0e05927bbce0/libs/gui/IGraphicBufferProducer.cpp
@@ -53,9 +86,10 @@ void transact(IPCContext &ctx, u32 code, u32 flags) {
     Parcel in, out;
     in.deserialize(ctx.readSend());
 
+    Status status;
     switch (code) {
         case Code::Connect:
-            connect(in, out);
+            status = connect(in, out);
             break;
         default:
             PLOG_FATAL << "Unimplemented transaction (code = " << code << ", flags = " << std::hex << flags << ")";
@@ -63,6 +97,7 @@ void transact(IPCContext &ctx, u32 code, u32 flags) {
             exit(0);
     }
 
+    out.write(status);
     ctx.writeReceive(out.serialize());
 }
 
