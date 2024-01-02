@@ -173,7 +173,7 @@ class IPCContext {
     u32 pid;
     std::vector<Handle> copyHandles, moveHandles;
 
-    std::vector<BufferDescriptor> bDescriptors;
+    std::vector<BufferDescriptor> bufferDescriptors[PointerBuffer::NumPointerBuffers];
     std::vector<CBufferDescriptor> receiveDescriptors;
 
     // Offsets
@@ -306,6 +306,21 @@ public:
         moveHandles.push_back(handle);
     }
 
+    void readBufferDescriptors(int buffer, u64 numDescriptors) {
+        pointerDescriptorOffset[buffer] = getOffset();
+    
+        for (u64 descriptor = 0; descriptor < numDescriptors; descriptor++) {
+            BufferDescriptor d;
+            d.raw[0] = read<u32>();
+            d.raw[1] = read<u32>();
+            d.raw[2] = read<u32>();
+
+            bufferDescriptors[buffer].push_back(d);
+
+            PLOG_VERBOSE << "Buffer descriptor " << descriptor << " (address = " << std::hex << d.getAddress() << ", size = " << d.getSize() << ", flags = " << d.getFlags() << ")";
+        }
+    }
+
     void marshal() {
         setOffset(0);
 
@@ -407,30 +422,21 @@ public:
         }
 
         if (header.numX > 0) {
-            PLOG_FATAL << "Unimplemented X buffer descriptors";
+            PLOG_VERBOSE << "Reading X buffer descriptors";
 
-            exit(0);
+            readBufferDescriptors(PointerBuffer::X, header.numX);
         }
 
         if (header.numA > 0) {
-            PLOG_FATAL << "Unimplemented A buffer descriptors";
+            PLOG_VERBOSE << "Reading A buffer descriptors";
 
-            exit(0);
+            readBufferDescriptors(PointerBuffer::A, header.numA);
         }
 
         if (header.numB > 0) {
-            pointerDescriptorOffset[PointerBuffer::B] = getOffset();
-    
-            for (u64 descriptor = 0; descriptor < header.numB; descriptor++) {
-                BufferDescriptor b;
-                b.raw[0] = read<u32>();
-                b.raw[1] = read<u32>();
-                b.raw[2] = read<u32>();
+            PLOG_VERBOSE << "Reading B buffer descriptors";
 
-                bDescriptors.push_back(b);
-
-                PLOG_VERBOSE << "B buffer descriptor " << descriptor << " (address = " << std::hex << b.getAddress() << ", size = " << b.getSize() << ", flags = " << b.getFlags() << ")";
-            }
+            readBufferDescriptors(PointerBuffer::B, header.numB);
         }
 
         if (header.numW > 0) {
@@ -574,7 +580,8 @@ public:
             exit(0);
         }
 
-        BufferDescriptor &d = bDescriptors[0];
+        // Pick the first B buffer descriptor
+        BufferDescriptor &d = bufferDescriptors[PointerBuffer::B][0];
 
         if (output.size() > d.getSize()) {
             PLOG_WARNING << "Output size larger than buffer";
