@@ -34,12 +34,6 @@ using android::buffer_queue::BufferQueue;
 
 using namespace hle;
 
-namespace NativeWindowAPI {
-    enum : u32 {
-        CPU = 2,
-    };
-}
-
 namespace HOSDriverBinderCommand {
     enum : u32 {
         AdjustRefcount = 1,
@@ -109,30 +103,6 @@ u64 makeLayer(u64 displayID) {
 
 u32 getBufferQueueID(u64 displayID, u64 layerID) {
     return getDisplay(displayID)->getLayer(layerID)->getBufferQueueID();
-}
-
-void connect(bool enableListener, u32 api, bool producerControlledByApp, Parcel &out) {
-    (void)producerControlledByApp;
-    (void)out;
-
-    if (enableListener) {
-        PLOG_FATAL << "Unimplemented listener";
-
-        exit(0);
-    }
-
-    switch (api) {
-        case NativeWindowAPI::CPU:
-            break;
-        default:
-            PLOG_FATAL << "Unimplemented API " << api;
-
-            exit(0);
-    }
-
-    PLOG_FATAL << "Unimplemented CONNECT";
-
-    exit(0);
 }
 
 Layer::Layer(u64 id) : id(id), bufferQueueID(makeBufferQueue()) {}
