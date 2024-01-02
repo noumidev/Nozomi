@@ -20,44 +20,46 @@
 
 #include <vector>
 
+#include <plog/Log.h>
+
 #include "types.hpp"
 
 namespace android::parcel {
 
 class Parcel {
     std::vector<u8> payload, objects;
+    u32 payloadReadPointer;
+
+    u32 bufferIndex;
 
 public:
-    Parcel() {}
-    ~Parcel() {}
+    Parcel();
+    ~Parcel();
 
-    void writeObject(const std::vector<u8> &data) {
-        payload.insert(payload.end(), data.begin(), data.end());
+    void alignUp(u32 alignment);
 
-        for (int i = 0; i < 4; i++) {
-            objects.push_back(0);
+    template<typename T>
+    T read() {
+        T data;
+
+        if (payload.size() < (payloadReadPointer + sizeof(T))) {
+            PLOG_FATAL << "Out of bounds payload read";
+
+            exit(0);
         }
-    }
 
-    std::vector<u8> serialize() {
-        std::vector<u8> data;
+        std::memcpy(&data, &payload[payloadReadPointer], sizeof(T));
 
-        // Write parcel header
-        u32 header[4];
-
-        header[0] = (u32)payload.size();               // Payload size
-        header[1] = (u32)sizeof(header);               // Payload offset (always 0x10)
-        header[2] = (u32)objects.size();               // Objects size
-        header[3] = (u32)(sizeof(header) + header[0]); // Objects offset
-
-        data.insert(data.end(), (u8 *)header, (u8 *)&header[4]);
-
-        // Write payload & objects
-        data.insert(data.end(), payload.begin(), payload.end());
-        data.insert(data.end(), objects.begin(), objects.end());
+        payloadReadPointer += sizeof(T);
 
         return data;
     }
+
+    void writeObject(const std::vector<u8> &data);
+
+    std::vector<u8> serialize();
+
+    void deserialize(const std::vector<u8> &data);
 };
 
 }
