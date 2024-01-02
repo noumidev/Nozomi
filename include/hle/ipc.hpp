@@ -592,6 +592,30 @@ public:
         PLOG_DEBUG << "Data reply offset = " << std::hex << getOffset();
     }
 
+    std::vector<u8> readSend() {
+        std::vector<u8> data;
+
+        const bool useX = header.numX > 0;
+
+        BufferDescriptor *d;
+        if (useX) {
+            d = &bufferDescriptors[PointerBuffer::X][0];
+        } else {
+            d = &bufferDescriptors[PointerBuffer::A][0];
+        }
+
+        if (d->size == 0) {
+            PLOG_FATAL << "Send buffer is empty";
+
+            exit(0);
+        }
+
+        data.resize(d->size);
+        std::memcpy(data.data(), sys::memory::getPointer(d->address), d->size);
+
+        return data;
+    }
+
     // Writes data to output buffers B/C
     u64 writeReceive(const std::vector<u8> &output) {
         const bool useB = header.numB > 0;
