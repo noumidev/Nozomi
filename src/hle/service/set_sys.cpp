@@ -79,7 +79,7 @@ void cmdGetFirmwareVersion(IPCContext &ctx, IPCContext &reply) {
     std::strcpy((char *)&output[0x68], DISPLAY_VERSION);
     std::strcpy((char *)&output[0x80], DISPLAY_TITLE);
 
-    ctx.writeReceive(output);
+    (void)ctx.writeReceive(output);
 
     reply.makeReply(2);
     reply.write(KernelResult::Success);

@@ -119,6 +119,22 @@ struct DataPayloadHeader {
 };
 
 struct BufferDescriptor {
+    u64 address, size;
+};
+
+struct XBufferDescriptor {
+    u64 raw;
+
+    u64 getAddress() {
+        return (raw >> 32) | ((raw & 0xF000) << 20) | ((raw & 0x1C0) << 30);
+    }
+
+    u64 getSize() {
+        return (raw >> 16) & 0xFFFF;
+    }
+};
+
+struct ABWBufferDescriptor {
     u32 raw[3];
 
     // This is actually so bad
@@ -306,16 +322,29 @@ public:
         moveHandles.push_back(handle);
     }
 
+    void readXBufferDescriptors() {
+        pointerDescriptorOffset[PointerBuffer::X] = getOffset();
+
+        for (u64 descriptor = 0; descriptor < header.numX; descriptor++) {
+            XBufferDescriptor d;
+            d.raw = read<u64>();
+
+            bufferDescriptors[PointerBuffer::X].push_back(BufferDescriptor{.address = d.getAddress(), .size = d.getSize()});
+
+            PLOG_VERBOSE << "Buffer descriptor " << descriptor << " (address = " << std::hex << d.getAddress() << ", size = " << d.getSize() << ")";
+        }
+    }
+
     void readBufferDescriptors(int buffer, u64 numDescriptors) {
         pointerDescriptorOffset[buffer] = getOffset();
     
         for (u64 descriptor = 0; descriptor < numDescriptors; descriptor++) {
-            BufferDescriptor d;
+            ABWBufferDescriptor d;
             d.raw[0] = read<u32>();
             d.raw[1] = read<u32>();
             d.raw[2] = read<u32>();
 
-            bufferDescriptors[buffer].push_back(d);
+            bufferDescriptors[buffer].push_back(BufferDescriptor{.address = d.getAddress(), .size = d.getSize()});
 
             PLOG_VERBOSE << "Buffer descriptor " << descriptor << " (address = " << std::hex << d.getAddress() << ", size = " << d.getSize() << ", flags = " << d.getFlags() << ")";
         }
@@ -424,7 +453,7 @@ public:
         if (header.numX > 0) {
             PLOG_VERBOSE << "Reading X buffer descriptors";
 
-            readBufferDescriptors(PointerBuffer::X, header.numX);
+            readXBufferDescriptors();
         }
 
         if (header.numA > 0) {
@@ -490,7 +519,7 @@ public:
         }
 
         // Skip data payload
-        setOffset(sizeof(u32) * header.dataSize);
+        setOffset(sizeof(u32) * (header.dataSize + 2 * header.numX + 3 * (header.numA + header.numB)));
         alignData();
 
         if (header.flagsC != 0) {
@@ -563,33 +592,32 @@ public:
         PLOG_DEBUG << "Data reply offset = " << std::hex << getOffset();
     }
 
-    void writeReceive(const std::vector<u8> &output) {
-        if (header.flagsC == 0) {
-            PLOG_FATAL << "Receive buffers disabled";
+    // Writes data to output buffers B/C
+    u64 writeReceive(const std::vector<u8> &output) {
+        const bool useB = header.numB > 0;
 
-            exit(0);
+        u64 address, size;
+        if (useB) {
+            // Get address from B buffer descriptors
+            BufferDescriptor &d = bufferDescriptors[PointerBuffer::B][0];
+
+            address = d.address;
+            size = d.size;
+        } else {
+            // TODO: use X buffer descriptor receive index
+            CBufferDescriptor &d = receiveDescriptors[0];
+
+            address = d.address;
+            size = d.size;
         }
 
-        std::memcpy(sys::memory::getPointer(receiveDescriptors[0].address), output.data(), std::min(receiveDescriptors[0].size, (u64)output.size()));
-    }
-
-    u64 writeB(const std::vector<u8> &output) {
-        if (header.numB == 0) {
-            PLOG_FATAL << "No receive buffers";
-
-            exit(0);
-        }
-
-        // Pick the first B buffer descriptor
-        BufferDescriptor &d = bufferDescriptors[PointerBuffer::B][0];
-
-        if (output.size() > d.getSize()) {
+        if (output.size() > size) {
             PLOG_WARNING << "Output size larger than buffer";
         }
+        
+        size = std::min((u64)output.size(), size);
 
-        const u64 size = std::min((u64)output.size(), d.getSize());
-
-        std::memcpy(sys::memory::getPointer(d.getAddress()), output.data(), size);
+        std::memcpy(sys::memory::getPointer(address), output.data(), size);
 
         return size;
     }

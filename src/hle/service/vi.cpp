@@ -231,7 +231,7 @@ void ManagerDisplayService::cmdCreateStrayLayer(IPCContext &ctx, IPCContext &rep
 
     parcel.writeObject(NativeWindow(bufferQueueID).serialize());
 
-    const u64 size = ctx.writeB(parcel.serialize());
+    const u64 size = ctx.writeReceive(parcel.serialize());
 
     reply.makeReply(6);
     reply.write(KernelResult::Success);
