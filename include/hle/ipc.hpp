@@ -595,7 +595,7 @@ public:
     std::vector<u8> readSend() {
         std::vector<u8> data;
 
-        const bool useX = header.numX > 0;
+        const bool useX = (header.numX > 0) && (bufferDescriptors[PointerBuffer::X][0].size > 0);
 
         BufferDescriptor *d;
         if (useX) {
@@ -618,7 +618,7 @@ public:
 
     // Writes data to output buffers B/C
     u64 writeReceive(const std::vector<u8> &output) {
-        const bool useB = header.numB > 0;
+        const bool useB = (header.numB > 0) && (bufferDescriptors[PointerBuffer::B][0].size > 0);
 
         u64 address, size;
         if (useB) {
