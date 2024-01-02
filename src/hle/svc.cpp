@@ -39,7 +39,8 @@ namespace SupervisorCall {
         SetHeapSize = 0x01,
         QueryMemory = 0x06,
         MapSharedMemory = 0x13,
-        CloseHandle = 0x16,
+        CreateTransferMemory = 0x15,
+        CloseHandle,
         GetSystemTick = 0x1E,
         ConnectToNamedPort = 0x1F,
         SendSyncRequest = 0x21,
@@ -79,6 +80,9 @@ void handleSVC(u32 svc) {
             break;
         case SupervisorCall::MapSharedMemory:
             svcMapSharedMemory();
+            break;
+        case SupervisorCall::CreateTransferMemory:
+            svcCreateTransferMemory();
             break;
         case SupervisorCall::CloseHandle:
             svcCloseHandle();
@@ -124,6 +128,29 @@ void svcConnectToNamedPort() {
 
     sys::cpu::set(0, KernelResult::Success);
     sys::cpu::set(1, kernel::makeSession(kernel::getPort(name)->getHandle()).raw);
+}
+
+void svcCreateTransferMemory() {
+    const u64 address = sys::cpu::get(1);
+    const u64 size = sys::cpu::get(2);
+    const u32 permission = (u32)sys::cpu::get(3);
+
+    PLOG_INFO << "svcCreateTransferMemory (address = " << std::hex << address << ", size = " << size << ", permission = " << permission << ")";
+
+    if (!sys::memory::isAligned(address) || !sys::memory::isAligned(size)) {
+        PLOG_FATAL << "Unaligned transfer memory address/size";
+
+        exit(0);
+    }
+
+    if (sys::memory::getPointer(address) == NULL) {
+        PLOG_FATAL << "Memory doesn't exist";
+
+        exit(0);
+    }
+
+    sys::cpu::set(0, KernelResult::Success);
+    sys::cpu::set(1, kernel::makeTransferMemory(address, size, permission).raw);
 }
 
 void svcGetInfo() {

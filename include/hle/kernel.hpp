@@ -37,6 +37,7 @@ Handle makePort(const char *name);
 Handle makeServiceSession(const char *name);
 Handle makeSession(Handle portHandle);
 Handle makeSharedMemory(u64 size);
+Handle makeTransferMemory(u64 address, u64 size, u32 permission);
 
 template<typename T>
 Handle makeService() {

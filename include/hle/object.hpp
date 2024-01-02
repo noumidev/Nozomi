@@ -131,4 +131,15 @@ public:
     void map(u64 address, u64 size, u32 permission);
 };
 
+class KTransferMemory : public KObject {
+    u64 address, size;
+
+public:
+    KTransferMemory(u64 address, u64 size);
+    ~KTransferMemory();
+
+    u64 getAddress();
+    u64 getSize();
+};
+
 }

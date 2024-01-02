@@ -174,4 +174,16 @@ void KSharedMemory::map(u64 address, u64 size, u32 permission) {
     sys::memory::map(mem, address, size >> sys::memory::PAGE_SHIFT, 0, 0, permission);
 }
 
+KTransferMemory::KTransferMemory(u64 address, u64 size) : address(address), size(size) {}
+
+KTransferMemory::~KTransferMemory() {}
+
+u64 KTransferMemory::getAddress() {
+    return address;
+}
+
+u64 KTransferMemory::getSize() {
+    return size;
+}
+
 }

@@ -41,6 +41,7 @@ namespace HandleType {
         KSession,
         KSharedMemory,
         KThread, // Does not exist yet
+        KTransferMemory,
         NumHandleTypes,
     };
 }

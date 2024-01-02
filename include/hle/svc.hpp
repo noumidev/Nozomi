@@ -26,6 +26,7 @@ void handleSVC(u32 svc);
 
 void svcCloseHandle();
 void svcConnectToNamedPort();
+void svcCreateTransferMemory();
 void svcGetInfo();
 void svcGetSystemTick();
 void svcMapSharedMemory();

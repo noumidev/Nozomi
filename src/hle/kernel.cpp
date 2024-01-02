@@ -22,6 +22,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "memory.hpp"
+
 namespace hle::kernel {
 
 void init() {
@@ -81,6 +83,18 @@ Handle makeSharedMemory(u64 size) {
     ((KSharedMemory *)table::getLast())->setHandle(handle);
 
     PLOG_DEBUG << "Making KSharedMemory (size = " << std::hex << size << ", handle = " << handle.raw << ")";
+
+    return handle;
+}
+
+Handle makeTransferMemory(u64 address, u64 size, u32 permission) {
+    const Handle handle = table::add(HandleType::KTransferMemory, new KTransferMemory(address, size));
+
+    ((KTransferMemory *)table::getLast())->setHandle(handle);
+
+    PLOG_DEBUG << "Making KTransferMemory (address = " << std::hex << address << ", size = " << size << ", permission = " << sys::memory::getPermissionString(permission) << ", handle = " << handle.raw << ")";
+
+    // TODO: actually change permissions?
 
     return handle;
 }
