@@ -28,7 +28,7 @@ namespace android::parcel {
 
 class Parcel {
     std::vector<u8> payload, objects;
-    u32 payloadReadPointer;
+    u32 payloadPointer;
 
     u32 bufferIndex;
 
@@ -42,17 +42,27 @@ public:
     T read() {
         T data;
 
-        if (payload.size() < (payloadReadPointer + sizeof(T))) {
+        if (payload.size() < (payloadPointer + sizeof(T))) {
             PLOG_FATAL << "Out of bounds payload read";
 
             exit(0);
         }
 
-        std::memcpy(&data, &payload[payloadReadPointer], sizeof(T));
+        std::memcpy(&data, &payload[payloadPointer], sizeof(T));
 
-        payloadReadPointer += sizeof(T);
+        payloadPointer += sizeof(T);
 
         return data;
+    }
+
+    // Intended to be used for output parcels
+    template<typename T>
+    void write(T data) {
+        payload.resize(payload.size() + sizeof(T));
+
+        std::memcpy(&payload[payloadPointer], &data, sizeof(T));
+
+        payloadPointer += sizeof(T);
     }
 
     void writeObject(const std::vector<u8> &data);

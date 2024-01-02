@@ -32,14 +32,14 @@ struct ParcelHeader {
 
 static_assert(sizeof(ParcelHeader) == (4 * sizeof(u32)));
 
-Parcel::Parcel() : payloadReadPointer(0) {}
+Parcel::Parcel() : payloadPointer(0) {}
 
 Parcel::~Parcel() {}
 
 void Parcel::alignUp(u32 alignment) {
-    if ((payloadReadPointer & (alignment - 1)) != 0) {
-        payloadReadPointer |= (alignment - 1);
-        payloadReadPointer += 1;
+    if ((payloadPointer & (alignment - 1)) != 0) {
+        payloadPointer |= (alignment - 1);
+        payloadPointer += 1;
     }
 }
 
