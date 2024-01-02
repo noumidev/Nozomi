@@ -22,6 +22,12 @@
 
 namespace android::buffer_queue {
 
+namespace Code {
+    enum : u32 {
+        Connect = 10,
+    };
+}
+
 struct BufferQueue {
 
 };
