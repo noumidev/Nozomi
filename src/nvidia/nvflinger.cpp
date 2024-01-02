@@ -20,10 +20,12 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <ios>
 
 #include <plog/Log.h>
 
 #include "buffer_queue.hpp"
+#include "kernel.hpp"
 #include "result.hpp"
 
 namespace nvidia::nvflinger {
@@ -35,6 +37,8 @@ using namespace hle;
 namespace HOSDriverBinderCommand {
     enum : u32 {
         AdjustRefcount = 1,
+        GetNativeHandle,
+        TransactParcelAuto,
     };
 }
 
@@ -141,7 +145,7 @@ void Display::makeLayer(u64 id) {
     layers.emplace_back(Layer(id));
 }
 
-HOSDriverBinder::HOSDriverBinder() : strongRefcount(0), weakRefcount(0) {}
+HOSDriverBinder::HOSDriverBinder() : event(Handle{.raw = 0ULL}), strongRefcount(0), weakRefcount(0) {}
 
 HOSDriverBinder::~HOSDriverBinder() {}
 
@@ -152,6 +156,12 @@ void HOSDriverBinder::handleRequest(IPCContext &ctx, IPCContext &reply) {
     switch (command) {
         case HOSDriverBinderCommand::AdjustRefcount:
             cmdAdjustRefcount(ctx, reply);
+            break;
+        case HOSDriverBinderCommand::GetNativeHandle:
+            cmdGetNativeHandle(ctx, reply);
+            break;
+        case HOSDriverBinderCommand::TransactParcelAuto:
+            cmdTransactParcelAuto(ctx, reply);
             break;
         default:
             PLOG_FATAL << "Unimplemented command " << command;
@@ -189,6 +199,45 @@ void HOSDriverBinder::cmdAdjustRefcount(IPCContext &ctx, IPCContext &reply) {
 
     reply.makeReply(2);
     reply.write(KernelResult::Success);
+}
+
+void HOSDriverBinder::cmdGetNativeHandle(IPCContext &ctx, IPCContext &reply) {
+    const u8 *data = (u8 *)ctx.getData();
+
+    i32 id, unknown;
+    std::memcpy(&id, &data[0], sizeof(i32));
+    std::memcpy(&unknown, &data[4], sizeof(i32));
+
+    PLOG_INFO << "GetNativeHandle (ID = " << id << ", unknown = " << unknown << ")";
+
+    if (event.type == HandleType::None) {
+        event = kernel::makeEvent(true); // Maybe?
+    }
+
+    reply.makeReply(2, 1);
+    reply.write(KernelResult::Success);
+    reply.copyHandle(event);
+}
+
+void HOSDriverBinder::cmdTransactParcelAuto(IPCContext &ctx, IPCContext &reply) {
+    (void)reply;
+
+    const u8 *data = (u8 *)ctx.getData();
+
+    i32 id;
+    u32 code, flags;
+    u64 parcelData, parcelReply;
+    std::memcpy(&id, &data[0], sizeof(i32));
+    std::memcpy(&code, &data[4], sizeof(u32));
+    std::memcpy(&parcelData, &data[8], sizeof(u64));
+    std::memcpy(&parcelReply, &data[16], sizeof(u64));
+    std::memcpy(&flags, &data[20], sizeof(u32));
+
+    PLOG_INFO << "cmdTransactParcelAuto (ID = " << id << ", code = " << code << ", data parcel = " << std::hex << parcelData << ", reply parcel = " << parcelReply << ", flags = " << flags << ")";
+
+    PLOG_FATAL << "Unimplemented TransactParcel";
+
+    exit(0);
 }
 
 NativeWindow::NativeWindow(u32 bufferQueueID) : bufferQueueID((u64)bufferQueueID) {}

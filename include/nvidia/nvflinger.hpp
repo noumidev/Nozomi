@@ -22,12 +22,14 @@
 #include <cstring>
 #include <vector>
 
+#include "handle.hpp"
 #include "ipc.hpp"
 #include "object.hpp"
 #include "types.hpp"
 
 namespace nvidia::nvflinger {
 
+using hle::Handle;
 using hle::IPCContext;
 using hle::KService;
 
@@ -74,9 +76,13 @@ public:
 };
 
 class HOSDriverBinder : public KService {
+    Handle event;
+
     i32 strongRefcount, weakRefcount;
 
     void cmdAdjustRefcount(IPCContext &ctx, IPCContext &reply);
+    void cmdGetNativeHandle(IPCContext &ctx, IPCContext &reply);
+    void cmdTransactParcelAuto(IPCContext &ctx, IPCContext &reply);
 public:
     HOSDriverBinder();
     ~HOSDriverBinder();
