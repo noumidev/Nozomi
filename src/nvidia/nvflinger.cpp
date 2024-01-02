@@ -34,6 +34,12 @@ using android::buffer_queue::BufferQueue;
 
 using namespace hle;
 
+namespace NativeWindowAPI {
+    enum : u32 {
+        CPU = 2,
+    };
+}
+
 namespace HOSDriverBinderCommand {
     enum : u32 {
         AdjustRefcount = 1,
@@ -103,6 +109,30 @@ u64 makeLayer(u64 displayID) {
 
 u32 getBufferQueueID(u64 displayID, u64 layerID) {
     return getDisplay(displayID)->getLayer(layerID)->getBufferQueueID();
+}
+
+void connect(bool enableListener, u32 api, bool producerControlledByApp, Parcel &out) {
+    (void)producerControlledByApp;
+    (void)out;
+
+    if (enableListener) {
+        PLOG_FATAL << "Unimplemented listener";
+
+        exit(0);
+    }
+
+    switch (api) {
+        case NativeWindowAPI::CPU:
+            break;
+        default:
+            PLOG_FATAL << "Unimplemented API " << api;
+
+            exit(0);
+    }
+
+    PLOG_FATAL << "Unimplemented CONNECT";
+
+    exit(0);
 }
 
 Layer::Layer(u64 id) : id(id), bufferQueueID(makeBufferQueue()) {}
@@ -232,9 +262,10 @@ void HOSDriverBinder::cmdTransactParcelAuto(IPCContext &ctx, IPCContext &reply) 
 
     PLOG_INFO << "cmdTransactParcelAuto (ID = " << id << ", code = " << code << ", flags = " << std::hex << flags << ")";
 
-    PLOG_FATAL << "Unimplemented TransactParcel";
+    android::buffer_queue::transact(ctx, code, flags);
 
-    exit(0);
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
 NativeWindow::NativeWindow(u32 bufferQueueID) : bufferQueueID((u64)bufferQueueID) {}

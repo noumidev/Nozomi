@@ -27,7 +27,11 @@
 #include "object.hpp"
 #include "types.hpp"
 
+#include "parcel.hpp"
+
 namespace nvidia::nvflinger {
+
+using android::parcel::Parcel;
 
 using hle::Handle;
 using hle::IPCContext;
@@ -121,5 +125,7 @@ u32 makeBufferQueue();
 u64 makeLayer(u64 displayID);
 
 u32 getBufferQueueID(u64 displayID, u64 layerID);
+
+void connect(bool enableListener, u32 api, bool producerControlledByApp, Parcel &out);
 
 }
