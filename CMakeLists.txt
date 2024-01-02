@@ -35,6 +35,8 @@ set(DYNARMIC_FRONTENDS "A64")
 # Set source files
 set(SOURCES
     src/main.cpp
+    src/android/buffer_queue.cpp
+    src/android/parcel.cpp
     src/hle/handle_table.cpp
     src/hle/ipc_manager.cpp
     src/hle/kernel.cpp

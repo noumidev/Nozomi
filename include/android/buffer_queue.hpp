@@ -18,18 +18,17 @@
 
 #pragma once
 
+#include "ipc.hpp"
 #include "types.hpp"
 
 namespace android::buffer_queue {
 
-namespace Code {
-    enum : u32 {
-        Connect = 10,
-    };
-}
+using hle::IPCContext;
 
 struct BufferQueue {
 
 };
+
+void transact(IPCContext &ctx, u32 code, u32 flags);
 
 }
