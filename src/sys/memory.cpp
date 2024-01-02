@@ -38,25 +38,6 @@ u64 appSize = 0;
 u64 heapSize = 0;
 u64 usedMemorySize = 0;
 
-const char *getPermissionString(u32 permission) {
-    switch (permission) {
-        case MemoryPermission::R:
-            return "(R/-/-)";
-        case MemoryPermission::W:
-            return "(-/W/-)";
-        case MemoryPermission::X:
-            return "(-/-/X)";
-        case MemoryPermission::RW:
-            return "(R/W/-)";
-        case MemoryPermission::RX:
-            return "(R/-/X)";
-        case MemoryPermission::None:
-        case MemoryPermission::DontCare:
-        default:
-            return "(-/-/-)";
-    }
-}
-
 void init() {
     // Clear page tables
     for (auto &i : readTable) {

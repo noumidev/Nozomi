@@ -83,6 +83,26 @@ inline bool isAlignedHeap(u64 n) {
     return (n & HEAP_PAGE_MASK) == 0;
 }
 
+
+inline const char *getPermissionString(u32 permission) {
+    switch (permission) {
+        case MemoryPermission::R:
+            return "(R/-/-)";
+        case MemoryPermission::W:
+            return "(-/W/-)";
+        case MemoryPermission::X:
+            return "(-/-/X)";
+        case MemoryPermission::RW:
+            return "(R/W/-)";
+        case MemoryPermission::RX:
+            return "(R/-/X)";
+        case MemoryPermission::None:
+        case MemoryPermission::DontCare:
+        default:
+            return "(-/-/-)";
+    }
+}
+
 void init();
 
 u64 getAppSize();
