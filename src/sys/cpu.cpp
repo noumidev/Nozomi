@@ -187,7 +187,7 @@ void init() {
     jit->GetVectors().fill(Dynarmic::A64::Vector{});
 
     jit->SetPC(memory::MemoryBase::Application);
-    jit->SetSP(memory::MemoryBase::Stack + memory::PAGE_SIZE);
+    jit->SetSP(memory::MemoryBase::Stack + memory::STACK_PAGES * memory::PAGE_SIZE);
     
     setTLSAddr(memory::MemoryBase::TLSBase);
 }

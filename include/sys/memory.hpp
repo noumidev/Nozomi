@@ -40,6 +40,7 @@ namespace MemoryBase {
 }
 
 constexpr u64 PAGE_NUM = MemoryBase::AddressSpace >> PAGE_SHIFT;
+constexpr u64 STACK_PAGES = 32;
 
 namespace MemoryPermission {
     enum : u32 {

@@ -37,7 +37,7 @@ void init(const char *path) {
     loader::load(path);
 
     // Set up stack and thread-local storage (this will be replaced later on)
-    (void)memory::allocate(memory::MemoryBase::Stack, 1, 0, 0, memory::MemoryPermission::RW);
+    (void)memory::allocate(memory::MemoryBase::Stack, memory::STACK_PAGES, 0, 0, memory::MemoryPermission::RW);
     (void)memory::allocate(memory::MemoryBase::TLSBase, 1, 0, 0, memory::MemoryPermission::RW);
 }
 
