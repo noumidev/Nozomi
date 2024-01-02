@@ -36,6 +36,7 @@
 #include "applet_oe.hpp"
 #include "fsp_srv.hpp"
 #include "hid.hpp"
+#include "nvdrv.hpp"
 #include "set_sys.hpp"
 #include "sm.hpp"
 #include "time.hpp"
@@ -52,6 +53,7 @@ static std::map<std::string, ServiceFunction> requestFuncMap {
     {std::string("appletOE"), &service::applet_oe::handleRequest},
     {std::string("fsp-srv"), &service::fsp_srv::handleRequest},
     {std::string("hid"), &service::hid::handleRequest},
+    {std::string("nvdrv"), &service::nvdrv::handleRequest},
     {std::string("set:sys"), &service::set_sys::handleRequest},
     {std::string("sm:"), &service::sm::handleRequest},
     {std::string("time:u"), &service::time::handleRequest},

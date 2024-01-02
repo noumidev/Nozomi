@@ -46,6 +46,7 @@ set(SOURCES
     src/hle/service/applet_oe.cpp
     src/hle/service/fsp_srv.cpp
     src/hle/service/hid.cpp
+    src/hle/service/nvdrv.cpp
     src/hle/service/set_sys.cpp
     src/hle/service/sm.cpp
     src/hle/service/time.cpp
@@ -75,6 +76,7 @@ set(HEADERS
     include/hle/service/applet_oe.hpp
     include/hle/service/fsp_srv.hpp
     include/hle/service/hid.hpp
+    include/hle/service/nvdrv.hpp
     include/hle/service/set_sys.hpp
     include/hle/service/sm.hpp
     include/hle/service/time.hpp
