@@ -65,6 +65,7 @@ namespace Command {
         ConvertCurrentObjectToDomain,
         CloneCurrentObject = 2,
         QueryPointerBufferSize,
+        CloneCurrentObjectEx,
     };
 }
 
@@ -183,6 +184,20 @@ void handleControl(IPCContext &ctx, IPCContext &reply) {
             reply.write(KernelResult::Success);
             reply.write(POINTER_BUFFER_SIZE);
             break;
+        case Command::CloneCurrentObjectEx:
+            {
+                u32 unknown;
+                std::memcpy(&unknown, ctx.getData(), sizeof(u32));
+
+                PLOG_INFO << "CloneCurrentObjectEx (unknown = " << unknown << ")";
+
+                // TODO: create new object, don't just copy the handle
+
+                reply.makeReply(2, 0, 1, true);
+                reply.write(KernelResult::Success);
+                reply.moveHandle(kernel::copyHandle(ctx.getService()->getHandle()));
+                break;
+            }
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
