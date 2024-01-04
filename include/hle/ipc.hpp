@@ -314,6 +314,10 @@ public:
         return domainHeader.objectID;
     }
 
+    std::vector<Handle> getCopyHandles() {
+        return copyHandles;
+    }
+
     void copyHandle(Handle handle) {
         copyHandles.push_back(handle);
     }
