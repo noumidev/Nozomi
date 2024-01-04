@@ -53,7 +53,9 @@ set(SOURCES
     src/hle/service/vi.cpp
     src/loader/loader.cpp
     src/loader/nro.cpp
+    src/nvidia/nvfile.cpp
     src/nvidia/nvflinger.cpp
+    src/nvidia/nvmap.cpp
     src/sys/cpu.cpp
     src/sys/emulator.cpp
     src/sys/memory.cpp
@@ -83,7 +85,9 @@ set(HEADERS
     include/hle/service/vi.hpp
     include/loader/loader.hpp
     include/loader/nro.hpp
+    include/nvidia/nvfile.hpp
     include/nvidia/nvflinger.hpp
+    include/nvidia/nvmap.hpp
     include/sys/cpu.hpp
     include/sys/emulator.hpp
     include/sys/memory.hpp
