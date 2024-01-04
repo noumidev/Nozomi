@@ -35,6 +35,7 @@ using parcel::Parcel;
 namespace Code {
     enum : u32 {
         Connect = 10,
+        SetPreallocatedBuffer = 14,
     };
 }
 
@@ -90,6 +91,11 @@ void transact(IPCContext &ctx, u32 code, u32 flags) {
     switch (code) {
         case Code::Connect:
             status = connect(in, out);
+            break;
+        case Code::SetPreallocatedBuffer:
+            PLOG_WARNING << "Unimplemented SetPreallocatedBuffer";
+
+            status = StatusCode::NoError;
             break;
         default:
             PLOG_FATAL << "Unimplemented transaction (code = " << code << ", flags = " << std::hex << flags << ")";
