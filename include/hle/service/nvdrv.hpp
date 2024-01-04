@@ -23,8 +23,21 @@
 #include "object.hpp"
 #include "types.hpp"
 
+#include "nvfile.hpp"
+
 namespace hle::service::nvdrv {
 
+using namespace nvidia;
+
+FileDescriptor open(const char *path);
+
+i32 ioctl(FileDescriptor fd, u32 iocode, IPCContext &ctx, IPCContext &reply);
+
 void handleRequest(IPCContext &ctx, IPCContext &reply);
+
+void cmdInitialize(IPCContext &ctx, IPCContext &reply);
+void cmdIoctl(IPCContext &ctx, IPCContext &reply);
+void cmdOpen(IPCContext &ctx, IPCContext &reply);
+void cmdQueryEvent(IPCContext &ctx, IPCContext &reply);
 
 }
