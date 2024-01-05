@@ -30,6 +30,7 @@ using FileDescriptor = i32;
 namespace NVResult {
     enum : i32 {
         Success = 0,
+        Timeout = 5,
     };
 }
 
