@@ -117,7 +117,6 @@ void makeDisplay(DisplayName name);
 
 u64 openDisplay(DisplayName name);
 
-u32 makeBufferQueue();
 u64 makeLayer(u64 displayID);
 
 u32 getBufferQueueID(u64 displayID, u64 layerID);

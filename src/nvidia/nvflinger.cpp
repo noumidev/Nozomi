@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ios>
+#include <vector>
 
 #include <plog/Log.h>
 
@@ -29,8 +30,6 @@
 #include "result.hpp"
 
 namespace nvidia::nvflinger {
-
-using android::buffer_queue::BufferQueue;
 
 using namespace hle;
 
@@ -43,7 +42,6 @@ namespace HOSDriverBinderCommand {
 }
 
 std::vector<Display> displays;
-std::vector<BufferQueue> bufferQueues;
 
 void init() {
     makeDisplay(makeDisplayName("Default"));
@@ -81,16 +79,6 @@ u64 openDisplay(DisplayName name) {
     exit(0);
 }
 
-u32 makeBufferQueue() {
-    static u32 bufferQueueID = 0;
-
-    PLOG_DEBUG << "Making buffer queue";
-
-    bufferQueues.emplace_back(BufferQueue{});
-
-    return bufferQueueID++;
-}
-
 u64 makeLayer(u64 displayID) {
     static u64 layerID = 0;
 
@@ -105,7 +93,7 @@ u32 getBufferQueueID(u64 displayID, u64 layerID) {
     return getDisplay(displayID)->getLayer(layerID)->getBufferQueueID();
 }
 
-Layer::Layer(u64 id) : id(id), bufferQueueID(makeBufferQueue()) {}
+Layer::Layer(u64 id) : id(id), bufferQueueID(android::buffer_queue::findFreeBufferQueue()) {}
 
 Layer::~Layer() {}
 
