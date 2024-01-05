@@ -29,6 +29,7 @@
 #include "kernel.hpp"
 #include "result.hpp"
 
+#include "nvhost_ctrl.hpp"
 #include "nvmap.hpp"
 
 namespace hle::service::nvdrv {
@@ -58,7 +59,7 @@ FileDescriptor open(const char *path) {
     if (std::strcmp(path, "/dev/nvmap") == 0) {
         file.ioctl = nvmap::ioctl;
     } else if (std::strcmp(path, "/dev/nvhost-ctrl") == 0) {
-        PLOG_WARNING << "Unimplemented /dev/nvhost-ctrl";
+        file.ioctl = nvhost_ctrl::ioctl;
     } else {
         PLOG_FATAL << "Unrecognized file path";
 
@@ -184,17 +185,20 @@ void cmdOpen(IPCContext &ctx, IPCContext &reply) {
 }
 
 void cmdQueryEvent(IPCContext &ctx, IPCContext &reply) {
-    (void)reply;
-
     const u8 *data = (u8 *)ctx.getData();
 
     u32 fd, evtID;
     std::memcpy(&fd, &data[0], sizeof(u32));
     std::memcpy(&evtID, &data[4], sizeof(u32));
 
-    PLOG_INFO << "QueryEvent (fd = " << fd << ", event ID = " << evtID << ")";
+    PLOG_INFO << "QueryEvent (fd = " << fd << ", event ID = " << std::hex << evtID << ") (stubbed)";
 
-    exit(0);
+    PLOG_ERROR << "Unimplemented QueryEvent";
+
+    reply.makeReply(2, 0);
+    reply.write(-1LL);
+    //reply.write(NVResult::Success);
+    //reply.copyHandle(kernel::makeEvent(true));
 }
 
 }
