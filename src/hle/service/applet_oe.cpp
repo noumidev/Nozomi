@@ -56,6 +56,7 @@ namespace ApplicationProxyCommand {
 namespace CommonStateGetterCommand {
     enum : u32 {
         GetEventHandle = 0,
+        ReceiveMessage,
         GetOperationMode = 5,
         GetPerformanceMode,
         GetCurrentFocusState = 9,
@@ -76,6 +77,13 @@ namespace WindowControllerCommand {
     enum : u32 {
         GetAppletResourceUserId = 1,
         AcquireForegroundRights = 10,
+    };
+}
+
+// For CommonStateGetter
+namespace AppletMessage {
+    enum : u32 {
+        None,
     };
 }
 
@@ -288,6 +296,8 @@ void CommonStateGetter::handleRequest(IPCContext &ctx, IPCContext &reply) {
     switch (command) {
         case CommonStateGetterCommand::GetEventHandle:
             return cmdGetEventHandle(ctx, reply);
+        case CommonStateGetterCommand::ReceiveMessage:
+            return cmdReceiveMessage(ctx, reply);
         case CommonStateGetterCommand::GetOperationMode:
             return cmdGetOperationMode(ctx, reply);
         case CommonStateGetterCommand::GetPerformanceMode:
@@ -343,6 +353,16 @@ void CommonStateGetter::cmdGetPerformanceMode(IPCContext &ctx, IPCContext &reply
     reply.makeReply(3);
     reply.write(KernelResult::Success);
     reply.write(PerformanceMode::Normal);
+}
+
+void CommonStateGetter::cmdReceiveMessage(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
+
+    PLOG_INFO << "ReceiveMessage (stubbed)";
+
+    reply.makeReply(3);
+    reply.write(KernelResult::NoAppletMessages);
+    reply.write(AppletMessage::None);
 }
 
 DebugFunctions::DebugFunctions() {}

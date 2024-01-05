@@ -82,6 +82,7 @@ class CommonStateGetter : public KService {
     void cmdGetEventHandle(IPCContext &ctx, IPCContext &reply);
     void cmdGetOperationMode(IPCContext &ctx, IPCContext &reply);
     void cmdGetPerformanceMode(IPCContext &ctx, IPCContext &reply);
+    void cmdReceiveMessage(IPCContext &ctx, IPCContext &reply);
 
 public:
     CommonStateGetter();
