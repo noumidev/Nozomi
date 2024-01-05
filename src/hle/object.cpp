@@ -161,10 +161,6 @@ void *KSharedMemory::getMem() {
 void KSharedMemory::map(u64 address, u64 size, u32 permission) {
     open();
 
-    if (address == 0) {
-        PLOG_WARNING << "Address is NULL";
-    }
-
     if (size != this->size) {
         PLOG_FATAL << "Size mismatch";
 

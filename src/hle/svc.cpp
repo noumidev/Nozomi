@@ -293,14 +293,14 @@ void svcGetInfo() {
                 PLOG_WARNING << "Unexpected handle/sub type for AslrRegionAddress";
             }
 
-            sys::cpu::set(1, sys::memory::MemoryBase::Application); // Probably
+            sys::cpu::set(1, sys::memory::MemoryBase::Application);
             break;
         case InfoType::AslrRegionSize:
             if ((handle.raw != KernelHandles::CurrentProcess) || (subType != 0)) {
                 PLOG_WARNING << "Unexpected handle/sub type for AslrRegionSize";
             }
 
-            sys::cpu::set(1, sys::memory::getAppSize()); // Probably
+            sys::cpu::set(1, sys::memory::MemoryBase::Heap - sys::memory::MemoryBase::Application);
             break;
         case InfoType::StackRegionAddress:
             if ((handle.raw != KernelHandles::CurrentProcess) || (subType != 0)) {
@@ -378,6 +378,13 @@ void svcMapSharedMemory() {
 
     if (!sys::memory::isAligned(address) || !sys::memory::isAligned(size)) {
         PLOG_FATAL << "Unaligned shared memory address/size";
+
+        exit(0);
+    }
+
+    // Pick new base address
+    if (address == 0) {
+        PLOG_FATAL << "Address is NULL";
 
         exit(0);
     }

@@ -293,9 +293,9 @@ void map(void *mem, u64 address, u64 pageNum, u32 type, u32 attribute, u32 permi
             const u64 readPage = page + basePage;
 
             if (readTable[readPage] != NULL) {
-                PLOG_ERROR << "Read page " << std::hex << readPage << " is already mapped!";
+                PLOG_FATAL << "Read page " << std::hex << readPage << " is already mapped!";
 
-                return;
+                exit(0);
             }
 
             readTable[readPage] = &((u8 *)memoryBlock.mem)[page * PAGE_SIZE];
@@ -307,9 +307,9 @@ void map(void *mem, u64 address, u64 pageNum, u32 type, u32 attribute, u32 permi
             const u64 writePage = page + basePage;
 
             if (writeTable[writePage] != NULL) {
-                PLOG_ERROR << "Write page " << std::hex << writePage << " is already mapped!";
+                PLOG_FATAL << "Write page " << std::hex << writePage << " is already mapped!";
 
-                return;
+                exit(0);
             }
 
             writeTable[writePage] = &((u8 *)memoryBlock.mem)[page * PAGE_SIZE];
@@ -398,7 +398,8 @@ MemoryBlock queryMemory(u64 addr) {
 
     PLOG_VERBOSE << "Memory block does not exist";
 
-    return MemoryBlock{.baseAddress = 0, .size = 0, .type = 0, .attribute = 0, .permission = 0, .mem = NULL};
+    // Returning an address-size pair outside the address space seems to do the trick
+    return MemoryBlock{.baseAddress = MemoryBase::AddressSpace, .size = MemoryBase::AddressSpace, .type = 0, .attribute = 0, .permission = 0, .mem = NULL};
 }
 
 }
