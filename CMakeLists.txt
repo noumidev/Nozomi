@@ -55,6 +55,7 @@ set(SOURCES
     src/loader/nro.cpp
     src/nvidia/nvfile.cpp
     src/nvidia/nvflinger.cpp
+    src/nvidia/nvhost_ctrl.cpp
     src/nvidia/nvmap.cpp
     src/sys/cpu.cpp
     src/sys/emulator.cpp
@@ -88,6 +89,7 @@ set(HEADERS
     include/nvidia/nvfence.hpp
     include/nvidia/nvfile.hpp
     include/nvidia/nvflinger.hpp
+    include/nvidia/nvhost_ctrl.hpp
     include/nvidia/nvmap.hpp
     include/sys/cpu.hpp
     include/sys/emulator.hpp
