@@ -18,6 +18,7 @@
 
 #include "hid.hpp"
 
+#include <cstdlib>
 #include <ios>
 
 #include <plog/Log.h>
@@ -31,6 +32,9 @@ namespace hle::service::hid {
 namespace Command {
     enum : u32 {
         CreateAppletResource,
+        SetSupportedNpadStyleSet = 100,
+        SetSupportedNpadIdType = 102,
+        ActivateNpadWithRevision = 109,
     };
 }
 
@@ -47,11 +51,27 @@ void handleRequest(IPCContext &ctx, IPCContext &reply) {
     switch (command) {
         case Command::CreateAppletResource:
             return cmdCreateAppletResource(ctx, reply);
+        case Command::SetSupportedNpadStyleSet:
+            return cmdSetSupportedNpadStyleSet(ctx, reply);
+        case Command::SetSupportedNpadIdType:
+            return cmdSetSupportedNpadIdType(ctx, reply);
+        case Command::ActivateNpadWithRevision:
+            return cmdActivateNpadWithRevision(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
             exit(0);
     }
+}
+
+void cmdActivateNpadWithRevision(IPCContext &ctx, IPCContext &reply) {
+    i32 revision;
+    std::memcpy(&revision, ctx.getData(), sizeof(i32));
+
+    PLOG_INFO << "ActivateNpadWithRevision (revision = " << revision << ") (stubbed)";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
 void cmdCreateAppletResource(IPCContext &ctx, IPCContext &reply) {
@@ -69,6 +89,30 @@ void cmdCreateAppletResource(IPCContext &ctx, IPCContext &reply) {
     reply.makeReply(2, 0, 1);
     reply.write(KernelResult::Success);
     reply.moveHandle(appletResource);
+}
+
+void cmdSetSupportedNpadIdType(IPCContext &ctx, IPCContext &reply) {
+    u64 appletResourceUserID;
+    std::memcpy(&appletResourceUserID, ctx.getData(), sizeof(u64));
+
+    PLOG_INFO << "SetSupportedNpadIdType (applet resource user ID = " << appletResourceUserID << ") (stubbed)";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
+}
+
+void cmdSetSupportedNpadStyleSet(IPCContext &ctx, IPCContext &reply) {
+    const u8 *data = (const u8 *)ctx.getData();
+
+    u32 npadStyle;
+    u64 appletResourceUserID;
+    std::memcpy(&npadStyle, &data[0], sizeof(u32));
+    std::memcpy(&appletResourceUserID, &data[4], sizeof(u64));
+
+    PLOG_INFO << "cmdSetSupportedNpadStyleSet (Npad style = " << npadStyle << ", applet resource user ID = " << appletResourceUserID << ") (stubbed)";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
 AppletResource::AppletResource() {}
