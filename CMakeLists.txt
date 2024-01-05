@@ -85,6 +85,7 @@ set(HEADERS
     include/hle/service/vi.hpp
     include/loader/loader.hpp
     include/loader/nro.hpp
+    include/nvidia/nvfence.hpp
     include/nvidia/nvfile.hpp
     include/nvidia/nvflinger.hpp
     include/nvidia/nvmap.hpp
