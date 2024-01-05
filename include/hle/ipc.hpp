@@ -428,7 +428,7 @@ public:
             PLOG_VERBOSE << "Handle descriptor = " << std::hex << handleDescriptor.raw;
 
             if (handleDescriptor.sendPID) {
-                pid = read<u32>();
+                pid = read<u64>();
 
                 PLOG_VERBOSE << "PID = " << std::hex << pid;
             }
