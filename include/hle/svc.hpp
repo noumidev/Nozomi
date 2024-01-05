@@ -32,6 +32,7 @@ void svcGetSystemTick();
 void svcMapSharedMemory();
 void svcOutputDebugString();
 void svcQueryMemory();
+void svcResetSignal();
 void svcSendSyncRequest();
 void svcSetHeapSize();
 void svcWaitSynchronization();

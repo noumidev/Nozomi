@@ -41,7 +41,8 @@ namespace SupervisorCall {
         MapSharedMemory = 0x13,
         CreateTransferMemory = 0x15,
         CloseHandle,
-        WaitSynchronization = 0x18,
+        ResetSignal,
+        WaitSynchronization,
         GetSystemTick = 0x1E,
         ConnectToNamedPort = 0x1F,
         SendSyncRequest = 0x21,
@@ -87,6 +88,9 @@ void handleSVC(u32 svc) {
             break;
         case SupervisorCall::CloseHandle:
             svcCloseHandle();
+            break;
+        case SupervisorCall::ResetSignal:
+            svcResetSignal();
             break;
         case SupervisorCall::WaitSynchronization:
             svcWaitSynchronization();
@@ -355,6 +359,14 @@ void svcQueryMemory() {
 
     sys::cpu::set(0, KernelResult::Success);
     sys::cpu::set(1, 0); // Page info?
+}
+
+void svcResetSignal() {
+    const Handle handle = hle::makeHandle((u32)sys::cpu::get(0));
+
+    PLOG_INFO << "svcResetSignal (signal handle = " << std::hex << handle.raw << ") (stubbed)";
+
+    sys::cpu::set(0, KernelResult::Success);
 }
 
 void svcSendSyncRequest() {
