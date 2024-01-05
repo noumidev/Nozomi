@@ -58,14 +58,13 @@ public:
     // Intended to be used for output parcels
     template<typename T>
     void write(T data) {
-        payload.resize(payload.size() + sizeof(T));
-
-        std::memcpy(&payload[payloadPointer], &data, sizeof(T));
-
-        payloadPointer += sizeof(T);
+        for (size_t i = 0; i < sizeof(T); i++) {
+            payload.push_back((u8)(data >> (8 * i)));
+        }
     }
 
     void writeObject(const std::vector<u8> &data);
+    void writeFlattenedObject(const std::vector<u8> &data);
 
     std::vector<u8> serialize();
 

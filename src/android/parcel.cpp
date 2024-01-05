@@ -37,9 +37,8 @@ Parcel::Parcel() : payloadPointer(0) {}
 Parcel::~Parcel() {}
 
 void Parcel::alignUp(u32 alignment) {
-    if ((payloadPointer & (alignment - 1)) != 0) {
-        payloadPointer |= (alignment - 1);
-        payloadPointer += 1;
+    if ((payload.size() & (alignment - 1)) != 0) {
+        payload.resize((payload.size() | (alignment - 1)) + 1);
     }
 }
 
@@ -49,6 +48,13 @@ void Parcel::writeObject(const std::vector<u8> &data) {
     for (int i = 0; i < 4; i++) {
         objects.push_back(0);
     }
+}
+
+void Parcel::writeFlattenedObject(const std::vector<u8> &data) {
+    write((u32)data.size());
+    write(0);
+
+    writeObject(data);
 }
 
 std::vector<u8> Parcel::serialize() {
