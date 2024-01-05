@@ -77,6 +77,10 @@ public:
     void setGraphicBuffer(const GraphicBuffer &gbuf) {
         this->gbuf = gbuf;
     }
+
+    void setFence(const NVMultiFence &fence) {
+        this->fence = fence;
+    }
 };
 
 void transact(IPCContext &ctx, u32 code, u32 flags);

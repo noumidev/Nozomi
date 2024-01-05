@@ -35,7 +35,9 @@ using parcel::Parcel;
 
 namespace Code {
     enum : u32 {
+        RequestBuffer = 1,
         DequeueBuffer = 3,
+        CancelBuffer = 8,
         Connect = 10,
         SetPreallocatedBuffer = 14,
     };
@@ -56,6 +58,31 @@ namespace NativeWindowAPI {
 }
 
 std::array<BufferQueue, MAX_BUFFER_QUEUES> bufferQueues;
+
+Status requestBuffer(Parcel &in, Parcel &out) {
+    const u32 buf = in.read<u32>();
+
+    PLOG_VERBOSE << "REQUEST_BUFFER (buffer = " << buf << ")";
+
+    if ((buf < 0) || (buf > (u32)MAX_BUFFER_QUEUES)) {
+        PLOG_FATAL << "Invalid buffer queue slot";
+
+        exit(0);
+    }
+
+    const GraphicBuffer *gbuf = bufferQueues[buf].getGraphicBuffer();
+
+    std::vector<u8> reply;
+    reply.resize((10 + gbuf->numInts) * sizeof(u32));
+
+    std::memcpy(reply.data(), &gbuf, 10 * sizeof(u32));
+    std::memcpy(&reply[10 * sizeof(u32)], gbuf->ints, gbuf->numInts * sizeof(u32));
+
+    out.write(1);
+    out.writeFlattenedObject(reply);
+
+    return StatusCode::NoError;
+}
 
 Status dequeueBuffer(Parcel &in, Parcel &out) {
     const bool async = in.read<u32>() == 1;
@@ -119,6 +146,32 @@ Status connect(Parcel &in, Parcel &out) {
             exit(0);
     }
     
+    return StatusCode::NoError;
+}
+
+Status cancelBuffer(Parcel &in, Parcel &out) {
+    // Output parcel is unused
+    (void)out;
+
+    const i32 buf = in.read<u32>();
+
+    PLOG_VERBOSE << "CANCEL_BUFFER (buffer = " << buf << ")";
+
+    PLOG_VERBOSE << "Size = " << in.read<u32>() << ", FD count = " << in.read<u32>();
+
+    BufferQueue &bq = bufferQueues[buf];
+    bq.setStatus(BufferQueueStatus::Unallocated);
+
+    NVMultiFence fence;
+    fence.numFences = in.read<u32>();
+
+    for (int i = 0; i < nvidia::MAX_FENCES; i++) {
+        fence.fences[i].id = in.read<u32>();
+        fence.fences[i].value = in.read<u32>();
+    }
+
+    bq.setFence(fence);
+
     return StatusCode::NoError;
 }
 
@@ -186,8 +239,14 @@ void transact(IPCContext &ctx, u32 code, u32 flags) {
 
     Status status;
     switch (code) {
+        case Code::RequestBuffer:
+            status = requestBuffer(in, out);
+            break;
         case Code::DequeueBuffer:
             status = dequeueBuffer(in, out);
+            break;
+        case Code::CancelBuffer:
+            status = cancelBuffer(in, out);
             break;
         case Code::Connect:
             status = connect(in, out);
