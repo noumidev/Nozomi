@@ -46,8 +46,24 @@ namespace SupervisorCall {
         GetSystemTick = 0x1E,
         ConnectToNamedPort = 0x1F,
         SendSyncRequest = 0x21,
-        OutputDebugString = 0x27,
+        Break = 0x26,
+        OutputDebugString,
         GetInfo = 0x29,
+    };
+}
+
+// Break
+namespace BreakReason {
+    enum : u32 {
+        Panic,
+        Assert,
+        User,
+        PreLoadDll,
+        PostLoadDll,
+        PreUnloadDll,
+        PostUnloadDll,
+        CppException,
+        NotificationOnlyFlag = 1U << 31,
     };
 }
 
@@ -70,6 +86,31 @@ namespace InfoType {
         InitialProcessIdRange = 19,
         UserExceptionContextAddress = 20,
     };
+}
+
+static const char *getBreakReasonName(u32 reason) {
+    switch (reason & ~BreakReason::NotificationOnlyFlag) {
+        case BreakReason::Panic:
+            return "Panic";
+        case BreakReason::Assert:
+            return "Assert";
+        case BreakReason::User:
+            return "User";
+        case BreakReason::PreLoadDll:
+            return "PreLoadDll";
+        case BreakReason::PostLoadDll:
+            return "PostLoadDll";
+        case BreakReason::PreUnloadDll:
+            return "PreUnloadDll";
+        case BreakReason::PostUnloadDll:
+            return "PostUnloadDll";
+        case BreakReason::CppException:
+            return "CppException";
+        default:
+            PLOG_FATAL << "Invalid break reason";
+
+            exit(0);
+    }
 }
 
 void handleSVC(u32 svc) {
@@ -104,6 +145,9 @@ void handleSVC(u32 svc) {
         case SupervisorCall::SendSyncRequest:
             svcSendSyncRequest();
             break;
+        case SupervisorCall::Break:
+            svcBreak();
+            break;
         case SupervisorCall::OutputDebugString:
             svcOutputDebugString();
             break;
@@ -115,6 +159,30 @@ void handleSVC(u32 svc) {
 
             exit(0);
     }
+}
+
+void svcBreak() {
+    const u64 reason = sys::cpu::get(0);
+    const u64 info = sys::cpu::get(1);
+    const u64 size = sys::cpu::get(2);
+
+    if (size != 4) {
+        PLOG_FATAL << "Break info is not a result code";
+
+        exit(0);
+    }
+
+    const u32 result = sys::memory::read32(info);
+
+    PLOG_ERROR << "svcBreak (reason = " << getBreakReasonName(reason) << ", module = " << getModuleName(getModule(result)) << ", description = " << getDescription(result) << ")";
+
+    if ((reason & BreakReason::NotificationOnlyFlag) == 0) {
+        PLOG_FATAL << "Break";
+
+        exit(0);
+    }
+
+    sys::cpu::set(0, KernelResult::Success);
 }
 
 void svcCloseHandle() {
