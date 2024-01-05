@@ -41,6 +41,7 @@ namespace SupervisorCall {
         MapSharedMemory = 0x13,
         CreateTransferMemory = 0x15,
         CloseHandle,
+        WaitSynchronization = 0x18,
         GetSystemTick = 0x1E,
         ConnectToNamedPort = 0x1F,
         SendSyncRequest = 0x21,
@@ -86,6 +87,9 @@ void handleSVC(u32 svc) {
             break;
         case SupervisorCall::CloseHandle:
             svcCloseHandle();
+            break;
+        case SupervisorCall::WaitSynchronization:
+            svcWaitSynchronization();
             break;
         case SupervisorCall::GetSystemTick:
             svcGetSystemTick();
@@ -378,6 +382,29 @@ void svcSetHeapSize() {
 
     sys::cpu::set(0, KernelResult::Success);
     sys::cpu::set(1, sys::memory::MemoryBase::Heap);
+}
+
+void svcWaitSynchronization() {
+    const u64 handles = sys::cpu::get(1);
+    const i32 handlesNum = (i32)sys::cpu::get(2);
+    const i64 timeout = sys::cpu::get(3);
+
+    PLOG_INFO << "svcWaitSynchronization (Handle* = " << std::hex << handles << ", handles num = " << std::dec << handlesNum << ", timeout = " << timeout << ")";
+
+    if (handlesNum > 0x40) {
+        PLOG_FATAL << "Too many handles";
+
+        exit(0);
+    }
+
+    for (i32 i = 0; i < handlesNum; i++) {
+        PLOG_DEBUG << "Waiting on object with handle " << std::hex << sys::memory::read32(handles + 4 * i);
+    }
+
+    PLOG_WARNING << "Unimplemented WaitSynchronization";
+
+    sys::cpu::set(0, KernelResult::Success);
+    sys::cpu::set(1, 0);
 }
 
 }

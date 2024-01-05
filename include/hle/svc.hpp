@@ -34,5 +34,6 @@ void svcOutputDebugString();
 void svcQueryMemory();
 void svcSendSyncRequest();
 void svcSetHeapSize();
+void svcWaitSynchronization();
 
 }
