@@ -61,7 +61,7 @@ struct GetIDParameters {
 static_assert(sizeof(GetIDParameters) == 8);
 
 struct NVMAP {
-    u64 size;
+    u64 address, size;
 };
 
 std::vector<NVMAP> nvmapObjects;
@@ -114,6 +114,8 @@ i32 alloc(IPCContext &ctx) {
         exit(0);
     }
 
+    nvmapObjects[params.handle - HANDLE_OFFSET].address = params.addr;
+
     writeReply((void *)&params, sizeof(AllocParameters), ctx);
 
     return NVResult::Success;
@@ -146,6 +148,16 @@ i32 ioctl(u32 iocode, IPCContext &ctx) {
 
             exit(0);
     }
+}
+
+u64 getAddressFromID(u32 nvmapID) {
+    if (nvmapID > nvmapObjects.size()) {
+        PLOG_FATAL << "Invalid nvmap ID";
+
+        exit(0);
+    }
+
+    return nvmapObjects[nvmapID].address;
 }
 
 }

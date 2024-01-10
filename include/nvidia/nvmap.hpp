@@ -27,4 +27,6 @@ using hle::IPCContext;
 
 i32 ioctl(u32 iocode, IPCContext &ctx);
 
+u64 getAddressFromID(u32 nvmapID);
+
 }
