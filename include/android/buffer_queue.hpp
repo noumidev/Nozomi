@@ -45,6 +45,7 @@ struct GraphicBuffer {
 enum class BufferQueueStatus {
     Unallocated,
     Dequeued,
+    Queued,
 };
 
 class BufferQueue {

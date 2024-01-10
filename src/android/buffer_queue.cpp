@@ -37,7 +37,8 @@ namespace Code {
     enum : u32 {
         RequestBuffer = 1,
         DequeueBuffer = 3,
-        CancelBuffer = 8,
+        QueueBuffer = 7,
+        CancelBuffer,
         Connect = 10,
         SetPreallocatedBuffer = 14,
     };
@@ -54,6 +55,22 @@ namespace StatusCode {
 namespace NativeWindowAPI {
     enum : u32 {
         CPU = 2,
+    };
+}
+
+namespace NativeWindowScalingMode {
+    enum : u32 {
+        Freeze,
+        ScaleToWindow,
+        ScaleCrop,
+        NoScaleCrop,
+        PreserveAspectRatio,
+    };
+}
+
+namespace NativeWindowTransform {
+    enum : u32 {
+        None,
     };
 }
 
@@ -93,19 +110,22 @@ Status dequeueBuffer(Parcel &in, Parcel &out) {
 
     PLOG_VERBOSE << "DEQUEUE_BUFFER (async = " << async << ", width = " << width << ", height = " << height << ", format = " << format << ", usage = " << std::hex << usage << ")";
 
-    const u32 slot = findFreeBufferQueue();
+    const u32 buf = findFreeBufferQueue();
 
-    BufferQueue &bq = bufferQueues[slot];
+    BufferQueue &bq = bufferQueues[buf];
     bq.setStatus(BufferQueueStatus::Dequeued);
 
-    const GraphicBuffer *gbuf = bq.getGraphicBuffer();
+    GraphicBuffer *gbuf = bq.getGraphicBuffer();
     if ((gbuf->width != width) || (gbuf->height != height) || (gbuf->format != format) || (gbuf->usage != usage)) {
-        PLOG_FATAL << "GraphicBuffer configuration doesn't match incoming configuration";
+        PLOG_ERROR << "GraphicBuffer configuration doesn't match incoming configuration";
 
-        exit(0);
+        gbuf->width = width;
+        gbuf->height = height;
+        gbuf->format = format;
+        gbuf->usage = usage;
     }
 
-    out.write(slot);
+    out.write(buf);
 
     if (bq.getFence()->numFences > 0) {
         std::vector<u8> reply;
@@ -119,33 +139,66 @@ Status dequeueBuffer(Parcel &in, Parcel &out) {
     return StatusCode::NoError;
 }
 
-Status connect(Parcel &in, Parcel &out) {
-    const bool enableListener = in.read<u32>() == 1;
-    const u32 api = in.read<u32>();
-    const bool producerControlledByApp = in.read<u32>() == 1;
+Status queueBuffer(Parcel &in, Parcel &out) {
+    (void)out;
 
-    PLOG_VERBOSE << "CONNECT (Enable listener = " << enableListener << ", API = " << api << ", producer controlled by app = " << producerControlledByApp << ")";
+    const u32 buf = in.read<u32>();
 
-    if (enableListener) {
-        PLOG_ERROR << "Unimplemented listener";
+    if ((buf < 0) || (buf > (u32)MAX_BUFFER_QUEUES)) {
+        PLOG_FATAL << "Invalid buffer queue slot";
 
         exit(0);
     }
 
-    switch (api) {
-        // TODO: write proper data to the output parcel
-        case NativeWindowAPI::CPU:
-            out.write(0);
-            out.write(0);
-            out.write(0);
-            out.write(0);
-            break;
-        default:
-            PLOG_ERROR << "Unimplemented native window API " << api;
+    PLOG_VERBOSE << "QUEUE_BUFFER (buffer = " << buf << ")";
+    
+    BufferQueue &bq = bufferQueues[buf];
+    //bq.setStatus(BufferQueueStatus::Queued);
+    bq.setStatus(BufferQueueStatus::Unallocated);
 
-            exit(0);
+    PLOG_WARNING << "HACK: BufferQueue is freed";
+
+    const i64 timestamp = in.read<u64>();
+    const bool isAutoTimestamp = in.read<u32>() == 1;
+
+    i32 crop[4];
+    for (int i = 0; i < 4; i++) {
+        crop[i] = in.read<u32>();
     }
     
+    const u32 scalingMode = in.read<u32>();
+    const u32 transform = in.read<u32>();
+    const u32 stickyTransform = in.read<u32>();
+    const bool async = in.read<u32>() == 1;
+    const i32 swapInterval = in.read<u32>();
+
+    NVMultiFence *fence = bq.getFence();
+
+    fence->numFences = in.read<u32>();
+    if ((fence->numFences < 0) || (fence->numFences > 4)) {
+        PLOG_FATAL << "Invalid number of fences (" << fence->numFences << ")";
+
+        exit(0);
+    }
+
+    for (int i = 0; i < 4; i++) {
+        fence->fences[i].id = in.read<u32>();
+        fence->fences[i].value = in.read<u32>();
+    }
+
+    PLOG_VERBOSE << "Timestamp = " << timestamp << " (is auto = " << isAutoTimestamp << ")";
+    PLOG_VERBOSE << "Crop (" << crop[0] << ", " << crop[1] << ", " << crop[2] << ", " << crop[3] << ")";
+    PLOG_VERBOSE << "Scaling mode = " << scalingMode << ", transform = " << transform << " (sticky = " << stickyTransform << ")";
+    PLOG_VERBOSE << "Async = " << async << ", swap interval = " << swapInterval;
+    
+    // TODO: write proper data to the output parcel
+    out.write(1280);
+    out.write(720);
+    out.write(0);
+    out.write(1);
+
+    nvidia::nvflinger::render(bq.getGraphicBuffer()->ints[1]);
+
     return StatusCode::NoError;
 }
 
@@ -172,6 +225,36 @@ Status cancelBuffer(Parcel &in, Parcel &out) {
 
     bq.setFence(fence);
 
+    return StatusCode::NoError;
+}
+
+Status connect(Parcel &in, Parcel &out) {
+    const bool enableListener = in.read<u32>() == 1;
+    const u32 api = in.read<u32>();
+    const bool producerControlledByApp = in.read<u32>() == 1;
+
+    PLOG_VERBOSE << "CONNECT (Enable listener = " << enableListener << ", API = " << api << ", producer controlled by app = " << producerControlledByApp << ")";
+
+    if (enableListener) {
+        PLOG_ERROR << "Unimplemented listener";
+
+        exit(0);
+    }
+
+    switch (api) {
+        // TODO: write proper data to the output parcel
+        case NativeWindowAPI::CPU:
+            out.write(1280);
+            out.write(720);
+            out.write(0);
+            out.write(0);
+            break;
+        default:
+            PLOG_ERROR << "Unimplemented native window API " << api;
+
+            exit(0);
+    }
+    
     return StatusCode::NoError;
 }
 
@@ -219,6 +302,8 @@ Status setPreallocatedBuffer(Parcel &in, Parcel &out) {
     // Still don't know what this is
     for (u32 i = 0; i < gbuf.numInts; i++) {
         gbuf.ints[i] = in.read<u32>();
+
+        std::printf("INT%d = %X\n", i, gbuf.ints[i]);
     }
 
     if ((buf < 0) || (buf > (int)MAX_BUFFER_QUEUES)) {
@@ -244,6 +329,9 @@ void transact(IPCContext &ctx, u32 code, u32 flags) {
             break;
         case Code::DequeueBuffer:
             status = dequeueBuffer(in, out);
+            break;
+        case Code::QueueBuffer:
+            status = queueBuffer(in, out);
             break;
         case Code::CancelBuffer:
             status = cancelBuffer(in, out);
