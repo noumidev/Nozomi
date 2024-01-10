@@ -96,6 +96,9 @@ set(HEADERS
     include/sys/memory.hpp
 )
 
+find_package(SDL2 REQUIRED)
+include_directories(${PROJECT_NAME} ${SDL2_INCLUDE_DIRS})
+
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE dynarmic plog)
+target_link_libraries(${PROJECT_NAME} PRIVATE dynarmic plog ${SDL2_LIBRARIES})

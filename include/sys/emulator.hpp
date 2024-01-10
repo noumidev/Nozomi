@@ -18,10 +18,19 @@
 
 #pragma once
 
+#include "types.hpp"
+
 namespace sys::emulator {
+
+constexpr int SCR_HEIGHT = 720;
+constexpr int SCR_WIDTH = 1280;
+constexpr int STRIDE = SCR_WIDTH;
+constexpr int BPP = 4;
 
 void init(const char *path);
 
 void run();
+
+void update(u8 *fb);
 
 }
