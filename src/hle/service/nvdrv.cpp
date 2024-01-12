@@ -32,6 +32,7 @@
 #include "nvhost_as_gpu.hpp"
 #include "nvhost_ctrl.hpp"
 #include "nvhost_ctrl_gpu.hpp"
+#include "nvhost_gpu.hpp"
 #include "nvmap.hpp"
 
 namespace hle::service::nvdrv {
@@ -42,6 +43,7 @@ namespace Command {
         Ioctl,
         Initialize = 3,
         QueryEvent,
+        Ioctl2 = 11,
     };
 }
 
@@ -66,6 +68,8 @@ FileDescriptor open(const char *path) {
         file.ioctl = nvhost_ctrl::ioctl;
     } else if (std::strcmp(path, "/dev/nvhost-ctrl-gpu") == 0) {
         file.ioctl = nvhost_ctrl_gpu::ioctl;
+    } else if (std::strcmp(path, "/dev/nvhost-gpu") == 0) {
+        file.ioctl = channel::nvhost_gpu::ioctl;
     } else {
         PLOG_FATAL << "Unrecognized file path";
 
@@ -111,6 +115,7 @@ void handleRequest(IPCContext &ctx, IPCContext &reply) {
             cmdOpen(ctx, reply);
             break;
         case Command::Ioctl:
+        case Command::Ioctl2:
             cmdIoctl(ctx, reply);
             break;
         case Command::Initialize:
@@ -199,12 +204,9 @@ void cmdQueryEvent(IPCContext &ctx, IPCContext &reply) {
 
     PLOG_INFO << "QueryEvent (fd = " << fd << ", event ID = " << std::hex << evtID << ") (stubbed)";
 
-    PLOG_ERROR << "Unimplemented QueryEvent";
-
-    reply.makeReply(2, 0);
-    reply.write(-1LL);
-    //reply.write(NVResult::Success);
-    //reply.copyHandle(kernel::makeEvent(true));
+    reply.makeReply(2, 1);
+    reply.write(NVResult::Success);
+    reply.copyHandle(kernel::makeEvent(true));
 }
 
 }
