@@ -29,7 +29,9 @@
 #include "kernel.hpp"
 #include "result.hpp"
 
+#include "nvhost_as_gpu.hpp"
 #include "nvhost_ctrl.hpp"
+#include "nvhost_ctrl_gpu.hpp"
 #include "nvmap.hpp"
 
 namespace hle::service::nvdrv {
@@ -58,8 +60,12 @@ FileDescriptor open(const char *path) {
 
     if (std::strcmp(path, "/dev/nvmap") == 0) {
         file.ioctl = nvmap::ioctl;
+    } else if (std::strcmp(path, "/dev/nvhost-as-gpu") == 0) {
+        file.ioctl = nvhost_as_gpu::ioctl;
     } else if (std::strcmp(path, "/dev/nvhost-ctrl") == 0) {
         file.ioctl = nvhost_ctrl::ioctl;
+    } else if (std::strcmp(path, "/dev/nvhost-ctrl-gpu") == 0) {
+        file.ioctl = nvhost_ctrl_gpu::ioctl;
     } else {
         PLOG_FATAL << "Unrecognized file path";
 
