@@ -31,19 +31,20 @@ namespace nvidia::nvhost_as_gpu {
 
 namespace IOC {
     enum : u32 {
-        AllocAsEx = 0x40284109,
+        BindChannel = 0x40044101,
+        AllocASEx = 0x40284109,
         MapBufferEx = 0xC0284106,
     };
 }
 
-struct AllocAsExParameters {
+struct AllocASExParameters {
     u32 bigPageSize;
     i32 asFD;
     u32 flags, reserved;
     u64 vaRangeStart, vaRangeEnd, vaRangeSplit;
 } __attribute__((packed));
 
-static_assert(sizeof(AllocAsExParameters) == 40);
+static_assert(sizeof(AllocASExParameters) == 40);
 
 struct MapBufferExParameters {
     u32 flags;
@@ -55,6 +56,8 @@ struct MapBufferExParameters {
 
 static_assert(sizeof(MapBufferExParameters) == 40);
 
+FileDescriptor channelFD = NO_FD;
+
 void writeReply(void *data, size_t size, IPCContext &ctx) {
     std::vector<u8> reply;
     reply.resize(size);
@@ -64,9 +67,23 @@ void writeReply(void *data, size_t size, IPCContext &ctx) {
     ctx.writeReceive(reply);
 }
 
-i32 allocAsEx(IPCContext &ctx) {
-    AllocAsExParameters params;
-    std::memcpy(&params, ctx.readSend().data(), sizeof(AllocAsExParameters));
+i32 bindChannel(IPCContext &ctx) {
+    if (channelFD != NO_FD) {
+        PLOG_FATAL << "GPU channel already bound to address space";
+
+        exit(0);
+    }
+
+    std::memcpy(&channelFD, ctx.readSend().data(), sizeof(FileDescriptor));
+
+    PLOG_VERBOSE << "BIND_CHANNEL (channel FD = " << channelFD << ")";
+
+    return NVResult::Success;
+}
+
+i32 allocASEx(IPCContext &ctx) {
+    AllocASExParameters params;
+    std::memcpy(&params, ctx.readSend().data(), sizeof(AllocASExParameters));
 
     PLOG_VERBOSE << "ALLOC_AS_EX (big page size = " << params.bigPageSize << ", VA range (start = " << std::hex << params.vaRangeStart << ", end = " << params.vaRangeEnd << ", split = " << params.vaRangeSplit << "))";
 
@@ -89,8 +106,10 @@ i32 mapBufferEx(IPCContext &ctx) {
 
 i32 ioctl(u32 iocode, IPCContext &ctx) {
     switch (iocode) {
-        case IOC::AllocAsEx:
-            return allocAsEx(ctx);
+        case IOC::BindChannel:
+            return bindChannel(ctx);
+        case IOC::AllocASEx:
+            return allocASEx(ctx);
         case IOC::MapBufferEx:
             return mapBufferEx(ctx);
         default:
