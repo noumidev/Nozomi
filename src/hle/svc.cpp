@@ -37,6 +37,7 @@ namespace hle::svc {
 namespace SupervisorCall {
     enum : u32 {
         SetHeapSize = 0x01,
+        SetMemoryAttribute = 0x03,
         QueryMemory = 0x06,
         MapSharedMemory = 0x13,
         CreateTransferMemory = 0x15,
@@ -117,6 +118,9 @@ void handleSVC(u32 svc) {
     switch (svc) {
         case SupervisorCall::SetHeapSize:
             svcSetHeapSize();
+            break;
+        case SupervisorCall::SetMemoryAttribute:
+            svcSetMemoryAttribute();
             break;
         case SupervisorCall::QueryMemory:
             svcQueryMemory();
@@ -469,6 +473,17 @@ void svcSetHeapSize() {
 
     sys::cpu::set(0, KernelResult::Success);
     sys::cpu::set(1, sys::memory::MemoryBase::Heap);
+}
+
+void svcSetMemoryAttribute() {
+    const u64 address = sys::cpu::get(0);
+    const u64 size = sys::cpu::get(1);
+    const u32 mask = (u32)sys::cpu::get(2);
+    const u32 value = (u32)sys::cpu::get(3);
+
+    PLOG_INFO << "svcSetMemoryAttribute (address = " << std::hex << address << ", size = " << size << ", mask = " << mask << ", value = " << value << ") (stubbed)";
+
+    sys::cpu::set(0, KernelResult::Success);
 }
 
 void svcWaitSynchronization() {
