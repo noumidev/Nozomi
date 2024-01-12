@@ -34,6 +34,8 @@ namespace NVResult {
     };
 }
 
+constexpr FileDescriptor NO_FD = -1;
+
 class NVFile {
     bool isOpen;
 
