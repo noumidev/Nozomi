@@ -150,7 +150,25 @@ i32 ioctl(u32 iocode, IPCContext &ctx) {
     }
 }
 
-u64 getAddressFromID(u32 nvmapID) {
+u64 getAddressFromID(u32 nvmapID, bool isHandle) {
+    if (isHandle) {
+        nvmapID -= HANDLE_OFFSET;
+    }
+
+    if (nvmapID > nvmapObjects.size()) {
+        PLOG_FATAL << "Invalid nvmap ID";
+
+        exit(0);
+    }
+
+    return nvmapObjects[nvmapID].address;
+}
+
+u64 getSizeFromID(u32 nvmapID, bool isHandle) {
+    if (isHandle) {
+        nvmapID -= HANDLE_OFFSET;
+    }
+
     if (nvmapID > nvmapObjects.size()) {
         PLOG_FATAL << "Invalid nvmap ID";
 
