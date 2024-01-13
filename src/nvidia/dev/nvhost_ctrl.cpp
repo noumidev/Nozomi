@@ -26,11 +26,14 @@
 
 #include <plog/Log.h>
 
+#include "host1x.hpp"
 #include "memory.hpp"
 #include "nvfence.hpp"
 #include "nvfile.hpp"
 
 namespace nvidia::dev::nvhost_ctrl {
+
+using host1x::NO_SYNCPOINT;
 
 namespace IOC {
     enum : u32 {
@@ -39,8 +42,6 @@ namespace IOC {
         SyncptFreeEvent = 0xC0040020,
     };
 }
-
-constexpr u32 NO_SYNCPT = -1;
 
 constexpr u32 MAX_EVENTS = 0x40;
 
@@ -84,7 +85,7 @@ i32 syncptWaitEventEx(IPCContext &ctx) {
 
     SyncpointEvent &event = events[eventSlot];
 
-    if (event.syncptID != NO_SYNCPT) {
+    if (event.syncptID != NO_SYNCPOINT) {
         PLOG_WARNING << "Event already has a syncpoint associated with it";
     } else {
         event.syncptID = params.fence.id;
@@ -117,7 +118,7 @@ i32 syncptAllocEvent(IPCContext &ctx) {
         exit(0);
     }
 
-    event.syncptID = NO_SYNCPT;
+    event.syncptID = NO_SYNCPOINT;
     event.isAllocated = true;
 
     return NVResult::Success;
