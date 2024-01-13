@@ -25,6 +25,7 @@
 
 #include <plog/Log.h>
 
+#include "host1x.hpp"
 #include "nvfence.hpp"
 #include "nvfile.hpp"
 
@@ -96,6 +97,8 @@ struct SubmitGPFIFOParameters {
 } __attribute__((packed));
 
 static_assert(sizeof(SubmitGPFIFOParameters) == 24);
+
+NVFence allocFence, submitFence;
 
 FileDescriptor nvmapFD = NO_FD;
 
@@ -189,9 +192,7 @@ i32 allocGPFIFOEx(IPCContext &ctx) {
 
     PLOG_VERBOSE << "ALLOC_GPFIFO_EX (entries = " << params.numEntries << ", jobs = " << params.numJobs << ", flags = " << params.flags << ") (stubbed)";
 
-    // TODO: create new fence
-    params.fence.id = 0;
-    params.fence.value = 0;
+    params.fence = allocFence;
 
     // TODO: implement the PFIFO
     writeReply(&params, sizeof(AllocGPFIFOExParameters), ctx);
@@ -215,12 +216,14 @@ i32 submitGPFIFO(IPCContext &ctx) {
     }
 
     params.flags = 0;
-
-    // TODO: create new fence
-    params.fence.id = 0;
-    params.fence.value = 0;
+    params.fence = submitFence;
 
     return NVResult::Success;
+}
+
+void init() {
+    allocFence = host1x::makeFence();
+    submitFence = host1x::makeFence();
 }
 
 i32 ioctl(u32 iocode, IPCContext &ctx) {

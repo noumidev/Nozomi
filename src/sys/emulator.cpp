@@ -19,10 +19,12 @@
 #include "emulator.hpp"
 
 #include "cpu.hpp"
+#include "host1x.hpp"
 #include "kernel.hpp"
 #include "loader.hpp"
 #include "memory.hpp"
 #include "nvflinger.hpp"
+#include "nvhost_gpu.hpp"
 
 #include <SDL2/SDL.h>
 
@@ -66,7 +68,9 @@ void init(const char *path) {
 
     cpu::init();
     hle::kernel::init();
+    nvidia::host1x::init();
     nvidia::nvflinger::init();
+    nvidia::channel::nvhost_gpu::init();
 
     // Load executable
     loader::load(path);

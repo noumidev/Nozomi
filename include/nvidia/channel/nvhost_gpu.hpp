@@ -25,6 +25,8 @@ namespace nvidia::channel::nvhost_gpu {
 
 using hle::IPCContext;
 
+void init();
+
 i32 ioctl(u32 iocode, IPCContext &ctx);
 
 }
