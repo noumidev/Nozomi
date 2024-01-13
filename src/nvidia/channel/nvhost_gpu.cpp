@@ -39,6 +39,7 @@ namespace IOC {
         SetPriority = 0x4004480D,
         AllocGPFIFOEx = 0x40204818,
         AllocGPFIFOEx2 = 0xC020481A,
+        SubmitGPFIFO2 = 0xC018481B,
     };
 }
 
@@ -85,6 +86,16 @@ struct SetErrorNotifierParameters {
 } __attribute__((packed));
 
 static_assert(sizeof(SetErrorNotifierParameters) == 24);
+
+struct SubmitGPFIFOParameters {
+    u64 gpfifo;
+    u32 numEntries;
+    u32 flags;
+    NVFence fence;
+    // GPFIFO entries handled seperately
+} __attribute__((packed));
+
+static_assert(sizeof(SubmitGPFIFOParameters) == 24);
 
 FileDescriptor nvmapFD = NO_FD;
 
@@ -188,6 +199,30 @@ i32 allocGPFIFOEx(IPCContext &ctx) {
     return NVResult::Success;
 }
 
+i32 submitGPFIFO(IPCContext &ctx) {
+    SubmitGPFIFOParameters params;
+    std::memcpy(&params, ctx.readSend().data(), sizeof(SubmitGPFIFOParameters));
+
+    PLOG_VERBOSE << "SUBMIT_GPFIFO (GPFIFO = " << std::hex << params.gpfifo << ", entries = " << std::dec << params.numEntries << ", flags = " << std::hex << params.flags << ")";
+
+    std::vector<u8> entries = ctx.readSend(1);
+
+    for (size_t i = 0; i < (entries.size() / sizeof(u64)); i++) {
+        u64 entry;
+        std::memcpy(&entry, &entries[sizeof(u64) * i], sizeof(u64));
+
+        PLOG_VERBOSE << "GPFIFO entry " << i << " (IOVA = " << std::hex << (entry & 0xFFFFFFFFFFULL) << ", flags = " << (entry >> 40) << ")";
+    }
+
+    params.flags = 0;
+
+    // TODO: create new fence
+    params.fence.id = 0;
+    params.fence.value = 0;
+
+    return NVResult::Success;
+}
+
 i32 ioctl(u32 iocode, IPCContext &ctx) {
     switch (iocode) {
         case IOC::SetNvmapFD:
@@ -203,6 +238,8 @@ i32 ioctl(u32 iocode, IPCContext &ctx) {
         case IOC::AllocGPFIFOEx:
         case IOC::AllocGPFIFOEx2:
             return allocGPFIFOEx(ctx);
+        case IOC::SubmitGPFIFO2:
+            return submitGPFIFO(ctx);
         default:
             PLOG_FATAL << "Unimplemented ioctl (iocode = " << std::hex << iocode << ")";
 
