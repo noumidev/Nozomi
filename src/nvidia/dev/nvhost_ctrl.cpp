@@ -18,6 +18,7 @@
 
 #include "nvhost_ctrl.hpp"
 
+#include <array>
 #include <cstdlib>
 #include <cstring>
 #include <ios>
@@ -26,6 +27,7 @@
 #include <plog/Log.h>
 
 #include "memory.hpp"
+#include "nvfence.hpp"
 #include "nvfile.hpp"
 
 namespace nvidia::nvhost_ctrl {
@@ -38,13 +40,25 @@ namespace IOC {
     };
 }
 
+constexpr u32 NO_SYNCPT = -1;
+
+constexpr u32 MAX_EVENTS = 0x40;
+
+struct SyncpointEvent {
+    u32 syncptID;
+
+    bool isAllocated;
+};
+
 struct SyncptWaitEventParams {
-    u32 id, thresh;
+    NVFence fence;
     i32 timeout;
     u32 value;
 } __attribute__((packed));
 
 static_assert(sizeof(SyncptWaitEventParams) == (4 * sizeof(u32)));
+
+std::array<SyncpointEvent, MAX_EVENTS> events;
 
 void writeReply(void *data, size_t size, IPCContext &ctx) {
     std::vector<u8> reply;
@@ -59,13 +73,26 @@ i32 syncptWaitEventEx(IPCContext &ctx) {
     SyncptWaitEventParams params;
     std::memcpy(&params, ctx.readSend().data(), sizeof(SyncptWaitEventParams));
 
-    PLOG_VERBOSE << "SYNCPT_WAIT_EVENT_EX (ID = " << params.id << ", threshold = " << std::hex << params.thresh << ", timeout = " << std::dec << params.timeout << ", event slot = " << params.value << ") (stubbed)";
+    PLOG_VERBOSE << "SYNCPT_WAIT_EVENT_EX (syncpt ID = " << params.fence.id << ", syncpt value = " << std::hex << params.fence.value << ", timeout = " << std::dec << params.timeout << ", event slot = " << params.value << ") (stubbed)";
 
-    PLOG_WARNING << "Unimplemented SYNCPT_WAIT_EVENT_EX";
+    const u32 eventSlot = params.value;
+    if (eventSlot >= MAX_EVENTS) {
+        PLOG_FATAL << "Invalid event slot";
 
-    // TODO: set this to proper syncpoint ID
-    //params.value = 0;
-    //writeReply(&params, sizeof(SyncptWaitEventParams), ctx);
+        exit(0);
+    }
+
+    SyncpointEvent &event = events[eventSlot];
+
+    if (event.syncptID != NO_SYNCPT) {
+        PLOG_WARNING << "Event already has a syncpoint associated with it";
+    } else {
+        event.syncptID = params.fence.id;
+    }
+
+    params.value = eventSlot | (event.syncptID << 4);
+
+    writeReply(&params, sizeof(SyncptWaitEventParams), ctx);
 
     return NVResult::Timeout;
 }
@@ -76,6 +103,23 @@ i32 syncptAllocEvent(IPCContext &ctx) {
 
     PLOG_VERBOSE << "SYNCPT_ALLOC_EVENT (event slot = " << eventSlot << ")";
 
+    if (eventSlot >= MAX_EVENTS) {
+        PLOG_FATAL << "Invalid event slot";
+
+        exit(0);
+    }
+
+    SyncpointEvent &event = events[eventSlot];
+
+    if (event.isAllocated) {
+        PLOG_FATAL << "Event is already allocated";
+
+        exit(0);
+    }
+
+    event.syncptID = NO_SYNCPT;
+    event.isAllocated = true;
+
     return NVResult::Success;
 }
 
@@ -84,6 +128,20 @@ i32 syncptFreeEvent(IPCContext &ctx) {
     std::memcpy(&eventSlot, ctx.readSend().data(), sizeof(u32));
 
     PLOG_VERBOSE << "SYNCPT_FREE_EVENT (event slot = " << eventSlot << ")";
+
+    if (eventSlot >= MAX_EVENTS) {
+        PLOG_FATAL << "Invalid event slot";
+
+        exit(0);
+    }
+
+    SyncpointEvent &event = events[eventSlot];
+
+    if (!event.isAllocated) {
+        PLOG_WARNING << "Event is deallocated";
+    }
+
+    event.isAllocated = false;
 
     return NVResult::Success;
 }

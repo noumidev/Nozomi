@@ -23,6 +23,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include/hle/service)
 include_directories(${PROJECT_SOURCE_DIR}/include/loader)
 include_directories(${PROJECT_SOURCE_DIR}/include/nvidia)
 include_directories(${PROJECT_SOURCE_DIR}/include/nvidia/channel)
+include_directories(${PROJECT_SOURCE_DIR}/include/nvidia/dev)
 include_directories(${PROJECT_SOURCE_DIR}/include/sys)
 include_directories(${PROJECT_SOURCE_DIR}/external/dynarmic)
 include_directories(${PROJECT_SOURCE_DIR}/external/plog)
@@ -54,13 +55,14 @@ set(SOURCES
     src/hle/service/vi.cpp
     src/loader/loader.cpp
     src/loader/nro.cpp
+    src/nvidia/host1x.cpp
     src/nvidia/nvfile.cpp
     src/nvidia/nvflinger.cpp
-    src/nvidia/nvhost_as_gpu.cpp
-    src/nvidia/nvhost_ctrl.cpp
-    src/nvidia/nvhost_ctrl_gpu.cpp
-    src/nvidia/nvmap.cpp
     src/nvidia/channel/nvhost_gpu.cpp
+    src/nvidia/dev/nvhost_as_gpu.cpp
+    src/nvidia/dev/nvhost_ctrl.cpp
+    src/nvidia/dev/nvhost_ctrl_gpu.cpp
+    src/nvidia/dev/nvmap.cpp
     src/sys/cpu.cpp
     src/sys/emulator.cpp
     src/sys/memory.cpp
@@ -90,14 +92,15 @@ set(HEADERS
     include/hle/service/vi.hpp
     include/loader/loader.hpp
     include/loader/nro.hpp
+    include/nvidia/host1x.hpp
     include/nvidia/nvfence.hpp
     include/nvidia/nvfile.hpp
     include/nvidia/nvflinger.hpp
-    include/nvidia/nvhost_as_gpu.hpp
-    include/nvidia/nvhost_ctrl.hpp
-    include/nvidia/nvhost_ctrl_gpu.hpp
-    include/nvidia/nvmap.hpp
     include/nvidia/channel/nvhost_gpu.hpp
+    include/nvidia/dev/nvhost_as_gpu.hpp
+    include/nvidia/dev/nvhost_ctrl.hpp
+    include/nvidia/dev/nvhost_ctrl_gpu.hpp
+    include/nvidia/dev/nvmap.hpp
     include/sys/cpu.hpp
     include/sys/emulator.hpp
     include/sys/memory.hpp
