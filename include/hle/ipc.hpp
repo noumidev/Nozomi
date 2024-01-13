@@ -596,16 +596,22 @@ public:
         PLOG_DEBUG << "Data reply offset = " << std::hex << getOffset();
     }
 
-    std::vector<u8> readSend() {
+    std::vector<u8> readSend(int idx = 0) {
+        if ((idx > header.numX) && (idx > header.numA)) {
+            PLOG_FATAL << "Invalid descriptor index";
+
+            exit(0);
+        }
+
         std::vector<u8> data;
 
         const bool useX = (header.numX > 0) && (bufferDescriptors[PointerBuffer::X][0].size > 0);
 
         BufferDescriptor *d;
         if (useX) {
-            d = &bufferDescriptors[PointerBuffer::X][0];
+            d = &bufferDescriptors[PointerBuffer::X][idx];
         } else {
-            d = &bufferDescriptors[PointerBuffer::A][0];
+            d = &bufferDescriptors[PointerBuffer::A][idx];
         }
 
         if (d->size == 0) {
