@@ -34,6 +34,7 @@
 
 #include "apm.hpp"
 #include "applet_oe.hpp"
+#include "fatal.hpp"
 #include "fsp_srv.hpp"
 #include "hid.hpp"
 #include "nvdrv.hpp"
@@ -51,6 +52,7 @@ constexpr u16 POINTER_BUFFER_SIZE = 0x8000; // Value taken from Yuzu
 static std::map<std::string, ServiceFunction> requestFuncMap {
     {std::string("apm"), &service::apm::handleRequest},
     {std::string("appletOE"), &service::applet_oe::handleRequest},
+    {std::string("fatal:u"), &service::fatal::handleRequest},
     {std::string("fsp-srv"), &service::fsp_srv::handleRequest},
     {std::string("hid"), &service::hid::handleRequest},
     {std::string("nvdrv"), &service::nvdrv::handleRequest},

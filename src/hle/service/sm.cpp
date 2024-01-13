@@ -34,6 +34,7 @@ namespace hle::service::sm {
 static std::map<u64, const char *> serviceNameMap {
     {0x6D7061, "apm"},
     {0x454F74656C707061, "appletOE"},
+    {0x753A6C61746166, "fatal:u"},
     {0x7672732D707366, "fsp-srv"},
     {0x646968, "hid"},
     {0x767264766E, "nvdrv"},
