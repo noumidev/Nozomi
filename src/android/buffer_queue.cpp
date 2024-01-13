@@ -125,16 +125,13 @@ Status dequeueBuffer(Parcel &in, Parcel &out) {
         gbuf->usage = usage;
     }
 
+    std::vector<u8> reply;
+    reply.resize(sizeof(NVMultiFence));
+
+    std::memcpy(reply.data(), bq.getFence(), sizeof(NVMultiFence));
+
     out.write(buf);
-
-    if (bq.getFence()->numFences > 0) {
-        std::vector<u8> reply;
-        reply.resize(sizeof(NVMultiFence));
-
-        std::memcpy(reply.data(), bq.getFence(), sizeof(NVMultiFence));
-
-        out.writeFlattenedObject(reply);
-    }
+    out.writeFlattenedObject(reply);
 
     return StatusCode::NoError;
 }
