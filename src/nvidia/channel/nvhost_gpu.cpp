@@ -25,11 +25,16 @@
 
 #include <plog/Log.h>
 
+#include "pfifo.hpp"
 #include "host1x.hpp"
 #include "nvfence.hpp"
 #include "nvfile.hpp"
 
 namespace nvidia::channel::nvhost_gpu {
+
+using namespace sys;
+
+using gpu::pfifo::CommandListHeader;
 
 namespace IOC {
     enum : u32 {
@@ -209,10 +214,10 @@ i32 submitGPFIFO(IPCContext &ctx) {
     std::vector<u8> entries = ctx.readSend(1);
 
     for (size_t i = 0; i < (entries.size() / sizeof(u64)); i++) {
-        u64 entry;
-        std::memcpy(&entry, &entries[sizeof(u64) * i], sizeof(u64));
+        CommandListHeader header;
+        std::memcpy(&header, &entries[sizeof(CommandListHeader) * i], sizeof(CommandListHeader));
 
-        PLOG_VERBOSE << "GPFIFO entry " << i << " (IOVA = " << std::hex << (entry & 0xFFFFFFFFFFULL) << ", flags = " << (entry >> 40) << ")";
+        gpu::pfifo::submit(header);
     }
 
     params.flags = 0;
