@@ -37,6 +37,7 @@ void svcResetSignal();
 void svcSendSyncRequest();
 void svcSetHeapSize();
 void svcSetMemoryAttribute();
+void svcSignalProcessWideKey();
 void svcWaitSynchronization();
 
 }

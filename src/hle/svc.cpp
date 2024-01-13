@@ -44,8 +44,9 @@ namespace SupervisorCall {
         CloseHandle,
         ResetSignal,
         WaitSynchronization,
-        GetSystemTick = 0x1E,
-        ConnectToNamedPort = 0x1F,
+        SignalProcessWideKey = 0x1D,
+        GetSystemTick,
+        ConnectToNamedPort,
         SendSyncRequest = 0x21,
         Break = 0x26,
         OutputDebugString,
@@ -139,6 +140,9 @@ void handleSVC(u32 svc) {
             break;
         case SupervisorCall::WaitSynchronization:
             svcWaitSynchronization();
+            break;
+        case SupervisorCall::SignalProcessWideKey:
+            svcSignalProcessWideKey();
             break;
         case SupervisorCall::GetSystemTick:
             svcGetSystemTick();
@@ -482,6 +486,16 @@ void svcSetMemoryAttribute() {
     const u32 value = (u32)sys::cpu::get(3);
 
     PLOG_INFO << "svcSetMemoryAttribute (address = " << std::hex << address << ", size = " << size << ", mask = " << mask << ", value = " << value << ") (stubbed)";
+
+    sys::cpu::set(0, KernelResult::Success);
+}
+
+// What does this do??
+void svcSignalProcessWideKey() {
+    const u64 address = sys::cpu::get(0);
+    const i32 value = (i32)sys::cpu::get(1);
+
+    PLOG_WARNING << "svcSignalProcessWideKey (address = " << std::hex << address << ", value = " << std::dec << value << ") (stubbed)";
 
     sys::cpu::set(0, KernelResult::Success);
 }
