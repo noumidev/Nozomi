@@ -26,7 +26,10 @@
 #include <plog/Log.h>
 
 #include "buffer_queue.hpp"
+#include "emulator.hpp"
 #include "kernel.hpp"
+#include "memory.hpp"
+#include "nvmap.hpp"
 #include "result.hpp"
 
 namespace nvidia::nvflinger {
@@ -91,6 +94,54 @@ u64 makeLayer(u64 displayID) {
 
 u32 getBufferQueueID(u64 displayID, u64 layerID) {
     return getDisplay(displayID)->getLayer(layerID)->getBufferQueueID();
+}
+
+// The two functions below were taken from libnx and slightly altered (deswizzles data now)
+void convertGOBTo16Bx2(u8 *outgob, u8 *ingob, u32 stride) {
+    for (u32 i = 0; i < 32; i++) {
+        const u32 y = ((i >> 1) & 0x06) | (i & 1);
+        const u32 x = ((i << 3) & 0x10) | ((i << 1) & 0x20);
+
+        *(__uint128_t *)(outgob + y * stride + x) = *(__uint128_t *)(ingob + sizeof(__uint128_t) * i);
+    }
+}
+
+void convertToBlocklinear(void *outbuf, u8 *inbuf, u32 stride, u32 height, u32 blockHeightLog2) {
+    const u32 blockHeightGOBs = 1 << blockHeightLog2;
+    const u32 blockHeightPx = 8 << blockHeightLog2;
+
+    const u32 widthBlocks = stride >> 6;
+    const u32 heightBlocks = (height + blockHeightPx - 1) >> (3 + blockHeightLog2);
+
+    u8* outgob = (u8*)outbuf;
+
+    for (u32 blockY = 0; blockY < heightBlocks; blockY++) {
+        for (u32 blockX = 0; blockX < widthBlocks; blockX++) {
+            for (u32 gobY = 0; gobY < blockHeightGOBs; gobY++) {
+                const u32 x = 64 * blockX;
+                const u32 y = blockY * blockHeightPx + 8 * gobY;
+
+                if (y < height) {
+                    convertGOBTo16Bx2(outgob + y * stride + x, inbuf, stride);
+                }
+
+                inbuf += 512;
+            }
+        }
+    }
+}
+
+void render(u32 nvmapID) {
+    const size_t FB_SIZE = sys::emulator::SCR_WIDTH * sys::emulator::SCR_HEIGHT * sys::emulator::BPP;
+
+    u8 *in = (u8 *)malloc(FB_SIZE), *out = (u8 *)malloc(FB_SIZE);
+    std::memcpy(in, sys::memory::getPointer(dev::nvmap::getAddressFromID(nvmapID)), FB_SIZE);
+
+    convertToBlocklinear(out, in, sys::emulator::STRIDE * sys::emulator::BPP, sys::emulator::SCR_HEIGHT, 4);
+    sys::emulator::update(out);
+
+    free(in);
+    free(out);
 }
 
 Layer::Layer(u64 id) : id(id), bufferQueueID(android::buffer_queue::findFreeBufferQueue()) {}

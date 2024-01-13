@@ -21,7 +21,7 @@
 #include "ipc.hpp"
 #include "types.hpp"
 
-namespace nvidia::nvmap {
+namespace nvidia::dev::nvmap {
 
 using hle::IPCContext;
 

@@ -27,7 +27,7 @@
 
 #include "nvfile.hpp"
 
-namespace nvidia::nvhost_ctrl_gpu {
+namespace nvidia::dev::nvhost_ctrl_gpu {
 
 namespace IOC {
     enum : u32 {

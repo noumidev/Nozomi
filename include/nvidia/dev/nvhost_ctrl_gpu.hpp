@@ -21,7 +21,7 @@
 #include "ipc.hpp"
 #include "types.hpp"
 
-namespace nvidia::nvhost_ctrl_gpu {
+namespace nvidia::dev::nvhost_ctrl_gpu {
 
 using hle::IPCContext;
 

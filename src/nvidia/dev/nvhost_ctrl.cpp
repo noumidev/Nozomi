@@ -30,7 +30,7 @@
 #include "nvfence.hpp"
 #include "nvfile.hpp"
 
-namespace nvidia::nvhost_ctrl {
+namespace nvidia::dev::nvhost_ctrl {
 
 namespace IOC {
     enum : u32 {

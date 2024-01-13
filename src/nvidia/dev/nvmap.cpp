@@ -28,7 +28,7 @@
 #include "memory.hpp"
 #include "nvfile.hpp"
 
-namespace nvidia::nvmap {
+namespace nvidia::dev::nvmap {
 
 constexpr u32 HANDLE_OFFSET = 128;
 

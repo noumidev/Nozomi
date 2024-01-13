@@ -61,13 +61,13 @@ FileDescriptor open(const char *path) {
     NVFile &file = files[files.size() - 1];
 
     if (std::strcmp(path, "/dev/nvmap") == 0) {
-        file.ioctl = nvmap::ioctl;
+        file.ioctl = dev::nvmap::ioctl;
     } else if (std::strcmp(path, "/dev/nvhost-as-gpu") == 0) {
-        file.ioctl = nvhost_as_gpu::ioctl;
+        file.ioctl = dev::nvhost_as_gpu::ioctl;
     } else if (std::strcmp(path, "/dev/nvhost-ctrl") == 0) {
-        file.ioctl = nvhost_ctrl::ioctl;
+        file.ioctl = dev::nvhost_ctrl::ioctl;
     } else if (std::strcmp(path, "/dev/nvhost-ctrl-gpu") == 0) {
-        file.ioctl = nvhost_ctrl_gpu::ioctl;
+        file.ioctl = dev::nvhost_ctrl_gpu::ioctl;
     } else if (std::strcmp(path, "/dev/nvhost-gpu") == 0) {
         file.ioctl = channel::nvhost_gpu::ioctl;
     } else {
