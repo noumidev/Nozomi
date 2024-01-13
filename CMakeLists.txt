@@ -25,6 +25,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include/nvidia)
 include_directories(${PROJECT_SOURCE_DIR}/include/nvidia/channel)
 include_directories(${PROJECT_SOURCE_DIR}/include/nvidia/dev)
 include_directories(${PROJECT_SOURCE_DIR}/include/sys)
+include_directories(${PROJECT_SOURCE_DIR}/include/sys/gpu)
 include_directories(${PROJECT_SOURCE_DIR}/external/dynarmic)
 include_directories(${PROJECT_SOURCE_DIR}/external/plog)
 
@@ -67,6 +68,7 @@ set(SOURCES
     src/sys/cpu.cpp
     src/sys/emulator.cpp
     src/sys/memory.cpp
+    src/sys/gpu/pfifo.cpp
 )
 
 # Set header files
@@ -106,6 +108,7 @@ set(HEADERS
     include/sys/cpu.hpp
     include/sys/emulator.hpp
     include/sys/memory.hpp
+    include/sys/gpu/pfifo.hpp
 )
 
 find_package(SDL2 REQUIRED)
