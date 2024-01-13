@@ -26,6 +26,7 @@
 #include <plog/Log.h>
 
 #include "nvfile.hpp"
+#include "nvmap.hpp"
 
 namespace nvidia::dev::nvhost_as_gpu {
 
@@ -91,13 +92,17 @@ i32 allocASEx(IPCContext &ctx) {
 }
 
 i32 mapBufferEx(IPCContext &ctx) {
+    static u64 IOVA = 0;
+
     MapBufferExParameters params;
     std::memcpy(&params, ctx.readSend().data(), sizeof(MapBufferExParameters));
 
     PLOG_VERBOSE << "MAP_BUFFER_EX (flags = " << std::hex << params.flags << ", kind = " << params.kind << ", mem ID = " << std::dec << params.memID << ", buffer offset = " << std::hex << params.bufferOffset << ", mapping size = " << params.mappingSize << ", align = " << params.align << ") (stubbed)";
 
     // TODO: figure out what to do with this
-    params.align = 0;
+    params.align = IOVA;
+
+    IOVA += nvmap::getSizeFromID(params.memID, true);
 
     writeReply(&params, sizeof(MapBufferExParameters), ctx);
 
