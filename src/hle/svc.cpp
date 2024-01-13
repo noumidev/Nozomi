@@ -39,6 +39,7 @@ namespace SupervisorCall {
         SetHeapSize = 0x01,
         SetMemoryAttribute = 0x03,
         QueryMemory = 0x06,
+        ExitProcess,
         MapSharedMemory = 0x13,
         CreateTransferMemory = 0x15,
         CloseHandle,
@@ -78,6 +79,7 @@ namespace InfoType {
         HeapRegionSize = 5,
         TotalMemorySize = 6,
         UsedMemorySize = 7,
+        DebuggerAttached = 8,
         RandomEntropy = 11,
         AslrRegionAddress = 12,
         AslrRegionSize = 13,
@@ -125,6 +127,9 @@ void handleSVC(u32 svc) {
             break;
         case SupervisorCall::QueryMemory:
             svcQueryMemory();
+            break;
+        case SupervisorCall::ExitProcess:
+            svcExitProcess();
             break;
         case SupervisorCall::MapSharedMemory:
             svcMapSharedMemory();
@@ -237,6 +242,12 @@ void svcCreateTransferMemory() {
     sys::cpu::set(1, kernel::makeTransferMemory(address, size, permission).raw);
 }
 
+void svcExitProcess() {
+    PLOG_FATAL << "svcExitProcess";
+
+    exit(0);
+}
+
 void svcGetInfo() {
     const u32 type = sys::cpu::get(1);
     const Handle handle = hle::makeHandle((u32)sys::cpu::get(2));
@@ -288,6 +299,13 @@ void svcGetInfo() {
             }
 
             sys::cpu::set(1, sys::memory::getUsedMemorySize());
+            break;
+        case InfoType::DebuggerAttached:
+            if ((handle.raw != 0) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for DebuggerAttached";
+            }
+
+            sys::cpu::set(1, 0);
             break;
         case InfoType::RandomEntropy:
             if ((handle.raw != 0) || (subType > 3)) {
