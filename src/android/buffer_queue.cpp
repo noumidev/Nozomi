@@ -95,7 +95,6 @@ Status requestBuffer(Parcel &in, Parcel &out) {
     std::memcpy(reply.data(), &gbuf, 10 * sizeof(u32));
     std::memcpy(&reply[10 * sizeof(u32)], gbuf->ints, gbuf->numInts * sizeof(u32));
 
-    out.write(1);
     out.writeFlattenedObject(reply);
 
     return StatusCode::NoError;
@@ -125,12 +124,15 @@ Status dequeueBuffer(Parcel &in, Parcel &out) {
         gbuf->usage = usage;
     }
 
+    out.write(buf);
+
+    const NVMultiFence *fence = bq.getFence();
+
     std::vector<u8> reply;
     reply.resize(sizeof(NVMultiFence));
 
-    std::memcpy(reply.data(), bq.getFence(), sizeof(NVMultiFence));
+    std::memcpy(reply.data(), fence, sizeof(NVMultiFence));
 
-    out.write(buf);
     out.writeFlattenedObject(reply);
 
     return StatusCode::NoError;
@@ -309,7 +311,16 @@ Status setPreallocatedBuffer(Parcel &in, Parcel &out) {
         exit(0);
     }
 
-    bufferQueues[buf].setGraphicBuffer(gbuf);
+    NVMultiFence fence;
+    fence.numFences = 1;
+    for (NVFence &f : fence.fences) {
+        f.id = -1;
+        f.value = 0;
+    }
+
+    BufferQueue &bq = bufferQueues[buf];
+    bq.setGraphicBuffer(gbuf);
+    bq.setFence(fence);
 
     return StatusCode::NoError;
 }

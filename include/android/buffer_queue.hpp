@@ -27,6 +27,7 @@ namespace android::buffer_queue {
 
 using hle::IPCContext;
 
+using nvidia::NVFence;
 using nvidia::NVMultiFence;
 
 constexpr size_t MAX_BUFFER_QUEUES = 16; // Subject to change

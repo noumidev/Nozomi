@@ -51,8 +51,8 @@ void Parcel::writeObject(const std::vector<u8> &data) {
 }
 
 void Parcel::writeFlattenedObject(const std::vector<u8> &data) {
-    write((u32)data.size());
-    write(0);
+    write(1);
+    write((u64)data.size());
 
     writeObject(data);
 }
