@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <GLFW/glfw3.h>
+
 namespace renderer::window {
 
 constexpr int WIDTH = 1280;
@@ -25,6 +27,8 @@ constexpr int HEIGHT = 720;
 
 void init();
 void deinit();
+
+GLFWwindow *getWindow();
 
 bool shouldQuit();
 
