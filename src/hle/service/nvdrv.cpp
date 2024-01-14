@@ -174,9 +174,19 @@ void cmdIoctl(IPCContext &ctx, IPCContext &reply) {
 }
 
 void cmdOpen(IPCContext &ctx, IPCContext &reply) {
-    char path[32];
+    constexpr size_t MAX_PATH_SIZE = 32;
+
+    const std::vector<u8> data = ctx.readSend();
+
+    if (data.size() > MAX_PATH_SIZE) {
+        PLOG_FATAL << "File path too long";
+
+        exit(0);
+    }
+
+    char path[MAX_PATH_SIZE];
     std::memset(path, 0, sizeof(path));
-    std::strncpy(path, (const char *)ctx.readSend().data(), sizeof(path));
+    std::strncpy(path, (const char *)data.data(), data.size());
 
     PLOG_INFO << "Open (path = " << path << ")";
 
