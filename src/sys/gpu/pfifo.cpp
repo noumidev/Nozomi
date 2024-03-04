@@ -23,14 +23,9 @@
 
 #include <plog/Log.h>
 
-#include "memory.hpp"
+#include "memory_manager.hpp"
 
 namespace sys::gpu::pfifo {
-
-using namespace memory;
-
-// TODO: don't use fixed address (duh)
-constexpr u64 COMMAND_LIST_ADDRESS = 0x100829000;
 
 namespace Opcode {
     enum : u32 {
@@ -59,7 +54,7 @@ void submit(CommandListHeader header) {
 
     for (u64 i = 0; i < header.size;) {
         Command command;
-        command.raw = read32(COMMAND_LIST_ADDRESS + header.iova + sizeof(u32) * i++);
+        command.raw = memory_manager::read32(header.iova + sizeof(u32) * i++);
 
         PLOG_VERBOSE << "Command word = " << std::hex << command.raw << " (opcode = " << std::dec << command.opcode << ", subchannel = " << command.subchannel << ", address = " << std::hex << command.address << ")";
 
@@ -70,7 +65,7 @@ void submit(CommandListHeader header) {
 
                     u32 address = command.address;
                     for (u32 j = 0; j < command.data; j++) {
-                        PLOG_VERBOSE << "Data = " << std::hex << read32(COMMAND_LIST_ADDRESS + header.iova + sizeof(u32) * i++) << ", register = " << address++;
+                        PLOG_VERBOSE << "Data = " << std::hex << memory_manager::read32(header.iova + sizeof(u32) * i++) << ", register = " << address++;
                     }
                 }
                 break;
@@ -80,7 +75,7 @@ void submit(CommandListHeader header) {
 
                     const u32 address = command.address;
                     for (u32 j = 0; j < command.data; j++) {
-                        PLOG_VERBOSE << "Data = " << std::hex << read32(COMMAND_LIST_ADDRESS + header.iova + sizeof(u32) * i++) << ", register = " << address;
+                        PLOG_VERBOSE << "Data = " << std::hex << memory_manager::read32(header.iova + sizeof(u32) * i++) << ", register = " << address;
                     }
                 }
                 break;
@@ -95,7 +90,7 @@ void submit(CommandListHeader header) {
 
                     u32 address = command.address;
                     for (u32 j = 0; j < command.data; j++) {
-                        PLOG_VERBOSE << "Data = " << std::hex << read32(COMMAND_LIST_ADDRESS + header.iova + sizeof(u32) * i++) << ", register = " << address;
+                        PLOG_VERBOSE << "Data = " << std::hex << memory_manager::read32(header.iova + sizeof(u32) * i++) << ", register = " << address;
 
                         address += increment;
 

@@ -28,6 +28,8 @@
 #include "nvfile.hpp"
 #include "nvmap.hpp"
 
+#include "memory_manager.hpp"
+
 namespace nvidia::dev::nvhost_as_gpu {
 
 namespace IOC {
@@ -102,7 +104,11 @@ i32 mapBufferEx(IPCContext &ctx) {
     // TODO: figure out what to do with this
     params.align = IOVA;
 
-    IOVA += nvmap::getSizeFromID(params.memID, true);
+    const u64 size = nvmap::getSizeFromID(params.memID, true);
+
+    sys::gpu::memory_manager::map(IOVA, nvmap::getAddressFromID(params.memID, true), size, 0x1000);
+
+    IOVA += size;
 
     writeReply(&params, sizeof(MapBufferExParameters), ctx);
 

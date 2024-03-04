@@ -71,6 +71,7 @@ set(SOURCES
     src/sys/cpu.cpp
     src/sys/emulator.cpp
     src/sys/memory.cpp
+    src/sys/gpu/memory_manager.cpp
     src/sys/gpu/pfifo.cpp
 )
 
@@ -78,6 +79,7 @@ set(SOURCES
 set(HEADERS
     include/android/buffer_queue.hpp
     include/android/parcel.hpp
+    include/common/file.hpp
     include/common/types.hpp
     include/hle/handle.hpp
     include/hle/handle_table.hpp
@@ -113,6 +115,7 @@ set(HEADERS
     include/sys/cpu.hpp
     include/sys/emulator.hpp
     include/sys/memory.hpp
+    include/sys/gpu/memory_manager.hpp
     include/sys/gpu/pfifo.hpp
 )
 
