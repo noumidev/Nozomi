@@ -24,5 +24,6 @@ void init();
 void deinit();
 
 void draw();
+void waitIdle();
 
 }

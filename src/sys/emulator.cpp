@@ -56,7 +56,10 @@ void run() {
         cpu::addTicks(CYCLES_PER_FRAME);
 
         renderer::window::pollEvents();
+        renderer::draw();
     }
+
+    renderer::waitIdle();
 
     renderer::deinit();
     renderer::window::deinit();
