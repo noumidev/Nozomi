@@ -71,6 +71,9 @@ set(SOURCES
     src/sys/cpu.cpp
     src/sys/emulator.cpp
     src/sys/memory.cpp
+    src/sys/gpu/fermi.cpp
+    src/sys/gpu/kepler.cpp
+    src/sys/gpu/maxwell.cpp
     src/sys/gpu/memory_manager.cpp
     src/sys/gpu/pfifo.cpp
 )
@@ -115,6 +118,10 @@ set(HEADERS
     include/sys/cpu.hpp
     include/sys/emulator.hpp
     include/sys/memory.hpp
+    include/sys/gpu/fermi.hpp
+    include/sys/gpu/kepler.hpp
+    include/sys/gpu/maxwell.hpp
+    include/sys/gpu/maxwell_registers.hpp
     include/sys/gpu/memory_manager.hpp
     include/sys/gpu/pfifo.hpp
 )

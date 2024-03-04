@@ -23,16 +23,35 @@
 
 #include <plog/Log.h>
 
+#include "fermi.hpp"
+#include "kepler.hpp"
+#include "maxwell.hpp"
 #include "memory_manager.hpp"
 
 namespace sys::gpu::pfifo {
 
 namespace Opcode {
     enum : u32 {
-        IncrementAddress = 1,
+        UseTertiaryGRP0,
+        IncrementAddress,
         NoIncrement = 3,
         Immediate,
         IncrementOnce,
+    };
+}
+
+namespace GRP0Opcode {
+    enum : u32 {
+        IncrementAddress,
+    };
+}
+
+namespace Subchannel {
+    enum : u32 {
+        Maxwell,
+        Kepler = 2,
+        Fermi,
+        MaxwellDMA,
     };
 }
 
@@ -58,14 +77,59 @@ void submit(CommandListHeader header) {
 
         PLOG_VERBOSE << "Command word = " << std::hex << command.raw << " (opcode = " << std::dec << command.opcode << ", subchannel = " << command.subchannel << ", address = " << std::hex << command.address << ")";
 
+        void (*write)(u32, u32);
+
+        switch (command.subchannel) {
+            case Subchannel::Maxwell:
+                write = &maxwell::write;
+                break;
+            case Subchannel::Kepler:
+                write = &kepler::write;
+                break;
+            case Subchannel::Fermi:
+                write = &fermi::write;
+                break;
+            case Subchannel::MaxwellDMA:
+                write = &maxwell::writeDMA;
+                break;
+            default:
+                PLOG_FATAL << "Unrecognized subchannel " << command.subchannel;
+
+                exit(0);
+        }
+
         switch (command.opcode) {
+            case Opcode::UseTertiaryGRP0:
+                {
+                    PLOG_VERBOSE << "GRP0_USE_TERT";
+
+                    const u64 tertiaryOpcode = (command.raw >> 16) & 3;
+
+                    switch (tertiaryOpcode) {
+                        case GRP0Opcode::IncrementAddress:
+                            {
+                                PLOG_VERBOSE << "GRP0_INC_METHOD";
+
+                                u32 address = command.address;
+                                for (u32 j = 0; j < (command.data >> 2); j++) {
+                                    write(address++, memory_manager::read32(header.iova + sizeof(u32) * i++));
+                                }
+                            }
+                            break;
+                        default:
+                            PLOG_FATAL << "Unrecognized tertiary opcode " << tertiaryOpcode;
+
+                            exit(0);
+                    }
+                }
+                break;
             case Opcode::IncrementAddress:
                 {
                     PLOG_VERBOSE << "INC_METHOD";
 
                     u32 address = command.address;
                     for (u32 j = 0; j < command.data; j++) {
-                        PLOG_VERBOSE << "Data = " << std::hex << memory_manager::read32(header.iova + sizeof(u32) * i++) << ", register = " << address++;
+                        write(address++, memory_manager::read32(header.iova + sizeof(u32) * i++));
                     }
                 }
                 break;
@@ -75,12 +139,14 @@ void submit(CommandListHeader header) {
 
                     const u32 address = command.address;
                     for (u32 j = 0; j < command.data; j++) {
-                        PLOG_VERBOSE << "Data = " << std::hex << memory_manager::read32(header.iova + sizeof(u32) * i++) << ", register = " << address;
+                        write(address, memory_manager::read32(header.iova + sizeof(u32) * i++));
                     }
                 }
                 break;
             case Opcode::Immediate:
                 PLOG_VERBOSE << "IMMD_DATA_METHOD (data = " << std::hex << command.data << ", register = " << command.address << ")";
+
+                write(command.address, command.data);
                 break;
             case Opcode::IncrementOnce:
                 {
@@ -90,7 +156,7 @@ void submit(CommandListHeader header) {
 
                     u32 address = command.address;
                     for (u32 j = 0; j < command.data; j++) {
-                        PLOG_VERBOSE << "Data = " << std::hex << memory_manager::read32(header.iova + sizeof(u32) * i++) << ", register = " << address;
+                        write(address, memory_manager::read32(header.iova + sizeof(u32) * i++));
 
                         address += increment;
 
