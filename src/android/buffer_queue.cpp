@@ -92,7 +92,7 @@ Status requestBuffer(Parcel &in, Parcel &out) {
     std::vector<u8> reply;
     reply.resize((10 + gbuf->numInts) * sizeof(u32));
 
-    std::memcpy(reply.data(), &gbuf, 10 * sizeof(u32));
+    std::memcpy(reply.data(), gbuf, 10 * sizeof(u32));
     std::memcpy(&reply[10 * sizeof(u32)], gbuf->ints, gbuf->numInts * sizeof(u32));
 
     out.writeFlattenedObject(reply);
