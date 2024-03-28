@@ -38,7 +38,6 @@
 
 namespace renderer {
 
-using vec2 = float[2];
 using vec3 = float[3];
 
 constexpr bool ENABLE_VALIDATION_LAYERS = true;
@@ -52,7 +51,7 @@ const std::vector<const char *> VALIDATION_LAYERS = {
 };
 
 struct Vertex {
-    vec2 pos;
+    vec3 pos;
     vec3 color;
 
     static VkVertexInputBindingDescription getBindingDescription() {
@@ -70,7 +69,7 @@ struct Vertex {
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
         attributeDescriptions[1].binding = 0;
@@ -83,14 +82,13 @@ struct Vertex {
 } __attribute__((packed));
 
 const std::vector<Vertex> VERTICES = {
-    {{-1, -1}, {0.80, 0.80, 1.0}},
-    {{ 1, -1}, {0.25, 0.25, 1.0}},
-    {{ 1,  1}, {0.50, 1.00, 1.0}},
-    {{-1,  1}, {0.60, 0.90, 1.0}},
+    {{-0.5,  0.5, 0.0}, {1, 0, 0}},
+    {{ 0.5,  0.5, 0.0}, {0, 1, 0}},
+    {{ 0.0, -0.5, 0.0}, {0, 0, 1}},
 };
 
 const std::vector<u16> INDICES = {
-    0, 1, 2, 2, 3, 0,
+    0, 1, 2,
 };
 
 struct QueueFamilyIndices {
@@ -283,7 +281,7 @@ bool isDeviceSuitable(VkPhysicalDevice device) {
 
 VkSurfaceFormatKHR selectSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
     for (const VkSurfaceFormatKHR &surfaceFormat : availableFormats) {
-        if ((surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB) && (surfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)) {
+        if ((surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB) && (surfaceFormat.colorSpace == VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT)) {
             return surfaceFormat;
         }
     }
@@ -799,7 +797,7 @@ void makeGraphicsPipeline() {
     rasterizationStateCreateInfo.lineWidth = 1.0;
 
     rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
     VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo{};
     multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -992,7 +990,7 @@ void recordCommandBuffer(VkCommandBuffer commandBuffer, u32 imageIndex) {
     renderPassBeginInfo.renderArea.offset = {0, 0};
     renderPassBeginInfo.renderArea.extent = state.swapchainExtent;
 
-    VkClearValue clearColor = {{{0.0, 0.0, 0.0, 1.0}}};
+    VkClearValue clearColor = {{{0.2, 0.3, 0.3, 1.0}}};
 
     renderPassBeginInfo.pClearValues = &clearColor;
     renderPassBeginInfo.clearValueCount = 1;
