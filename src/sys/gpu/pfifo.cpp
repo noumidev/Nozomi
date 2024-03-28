@@ -23,6 +23,7 @@
 
 #include <plog/Log.h>
 
+#include "compute.hpp"
 #include "fermi.hpp"
 #include "kepler.hpp"
 #include "maxwell.hpp"
@@ -49,7 +50,8 @@ namespace GRP0Opcode {
 namespace Subchannel {
     enum : u32 {
         Maxwell,
-        Kepler = 2,
+        Compute,
+        Kepler,
         Fermi,
         MaxwellDMA,
     };
@@ -82,6 +84,9 @@ void submit(CommandListHeader header) {
         switch (command.subchannel) {
             case Subchannel::Maxwell:
                 write = &maxwell::write;
+                break;
+            case Subchannel::Compute:
+                write = &compute::write;
                 break;
             case Subchannel::Kepler:
                 write = &kepler::write;
