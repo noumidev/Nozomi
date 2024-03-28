@@ -36,6 +36,8 @@ void write16(u64 iova, u16 data);
 void write32(u64 iova, u32 data);
 void write64(u64 iova, u64 data);
 
+u64 findFreeIOVA(u64 size);
+
 void map(u64 iova, u64 address, u64 size, u64 align);
 
 }

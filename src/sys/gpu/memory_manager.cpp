@@ -155,6 +155,27 @@ void write64(u64 iova, u64 data) {
     exit(0);
 }
 
+u64 findFreeIOVA(u64 size) {
+    const u64 pageNum = size >> sys::memory::PAGE_SHIFT;
+
+    for (u64 i = 0; i < sys::memory::PAGE_NUM; i++) {
+        if (pages.find(i) == pages.end()) {
+            for (u64 j = 0; j < pageNum; j++) {
+                if (pages.find(i + j) != pages.end()) {
+                    i += j;
+                    break;
+                }
+            }
+
+            return i << sys::memory::PAGE_SHIFT;
+        }
+    }
+
+    PLOG_FATAL << "Unable to find enough free GPU pages";
+
+    exit(0);
+}
+
 void map(u64 iova, u64 address, u64 size, u64 align) {
     (void)align;
 
