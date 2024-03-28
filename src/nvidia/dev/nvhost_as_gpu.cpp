@@ -28,12 +28,15 @@
 #include "nvfile.hpp"
 #include "nvmap.hpp"
 
+#include "memory_manager.hpp"
+
 namespace nvidia::dev::nvhost_as_gpu {
 
 namespace IOC {
     enum : u32 {
         BindChannel = 0x40044101,
         AllocASEx = 0x40284109,
+        AllocSpace = 0xC0184102,
         MapBufferEx = 0xC0284106,
     };
 }
@@ -46,6 +49,15 @@ struct AllocASExParameters {
 } __attribute__((packed));
 
 static_assert(sizeof(AllocASExParameters) == 40);
+
+struct AllocSpaceParameters {
+    u32 pages, pageSize;
+    u32 flags;
+    u32 padding;
+    u64 align;
+} __attribute__((packed));
+
+static_assert(sizeof(AllocSpaceParameters) == 24);
 
 struct MapBufferExParameters {
     u32 flags;
@@ -91,18 +103,35 @@ i32 allocASEx(IPCContext &ctx) {
     return NVResult::Success;
 }
 
-i32 mapBufferEx(IPCContext &ctx) {
-    static u64 IOVA = 0;
+i32 allocSpace(IPCContext &ctx) {
+    AllocSpaceParameters params;
+    std::memcpy(&params, ctx.readSend().data(), sizeof(AllocSpaceParameters));
 
+    PLOG_VERBOSE << "ALLOC_SPACE (pages = " << params.pages << ", page size = " << std::hex << params.pageSize << ", flags = " << params.flags << ", align = " << params.align << ")";
+
+    params.align = sys::gpu::memory_manager::findFreeIOVA(params.pages * (params.pageSize >> sys::memory::PAGE_SHIFT));
+
+    writeReply(&params, sizeof(AllocSpaceParameters), ctx);
+
+    return NVResult::Success;
+}
+
+i32 mapBufferEx(IPCContext &ctx) {
     MapBufferExParameters params;
     std::memcpy(&params, ctx.readSend().data(), sizeof(MapBufferExParameters));
 
-    PLOG_VERBOSE << "MAP_BUFFER_EX (flags = " << std::hex << params.flags << ", kind = " << params.kind << ", mem ID = " << std::dec << params.memID << ", buffer offset = " << std::hex << params.bufferOffset << ", mapping size = " << params.mappingSize << ", align = " << params.align << ") (stubbed)";
+    PLOG_VERBOSE << "MAP_BUFFER_EX (flags = " << std::hex << params.flags << ", kind = " << params.kind << ", mem ID = " << std::dec << params.memID << ", buffer offset = " << std::hex << params.bufferOffset << ", mapping size = " << params.mappingSize << ", align = " << params.align << ")";
 
-    // TODO: figure out what to do with this
-    params.align = IOVA;
+    const u64 size = nvmap::getSizeFromID(params.memID, true);
 
-    IOVA += nvmap::getSizeFromID(params.memID, true);
+    u64 iova = params.bufferOffset;
+    if (iova == 0) {
+        iova = sys::gpu::memory_manager::findFreeIOVA(size);
+    }
+
+    params.align = iova;
+
+    sys::gpu::memory_manager::map(iova, nvmap::getAddressFromID(params.memID, true), size, 0x1000);
 
     writeReply(&params, sizeof(MapBufferExParameters), ctx);
 
@@ -115,6 +144,8 @@ i32 ioctl(u32 iocode, IPCContext &ctx) {
             return bindChannel(ctx);
         case IOC::AllocASEx:
             return allocASEx(ctx);
+        case IOC::AllocSpace:
+            return allocSpace(ctx);
         case IOC::MapBufferEx:
             return mapBufferEx(ctx);
         default:

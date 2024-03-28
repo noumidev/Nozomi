@@ -23,21 +23,40 @@
 
 #include <plog/Log.h>
 
-#include "memory.hpp"
+#include "compute.hpp"
+#include "fermi.hpp"
+#include "kepler.hpp"
+#include "maxwell.hpp"
+#include "memory_manager.hpp"
 
 namespace sys::gpu::pfifo {
 
-using namespace memory;
-
-// TODO: don't use fixed address (duh)
-constexpr u64 COMMAND_LIST_ADDRESS = 0x100829000;
+constexpr u32 MAX_SUBCHANNELS = 8;
 
 namespace Opcode {
     enum : u32 {
-        IncrementAddress = 1,
+        UseTertiaryGRP0,
+        IncrementAddress,
         NoIncrement = 3,
         Immediate,
         IncrementOnce,
+    };
+}
+
+namespace GRP0Opcode {
+    enum : u32 {
+        IncrementAddress,
+    };
+}
+
+namespace Engine {
+    enum : u32 {
+        Fermi = 0x902D,
+        Kepler = 0xA140,
+        GPFIFO = 0xB06F,
+        MaxwellDMA = 0xB0B5,
+        Maxwell = 0xB197,
+        Compute = 0xB1C0,
     };
 }
 
@@ -54,23 +73,123 @@ union Command {
 
 static_assert(sizeof(Command) == sizeof(u32));
 
+void (*subchannels[MAX_SUBCHANNELS])(u32, u32) = {
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+};
+
+void bindSubchannel(u32 subchannel, u32 data) {
+    if (subchannel >= MAX_SUBCHANNELS) {
+        PLOG_FATAL << "Invalid subchannel " << subchannel;
+
+        exit(0);
+    }
+
+    if (subchannels[subchannel] != NULL) {
+        PLOG_WARNING << "Subchannel " << subchannel << " already bound";
+
+        return;
+    }
+
+    const u32 classID = (u16)data;
+    
+    switch (data) {
+        case Engine::Fermi:
+            PLOG_INFO << "Binding subchannel " << subchannel << " to Fermi";
+
+            subchannels[subchannel] = &fermi::write;
+            break;
+        case Engine::Kepler:
+            PLOG_INFO << "Binding subchannel " << subchannel << " to Kepler";
+
+            subchannels[subchannel] = &kepler::write;
+            break;
+        case Engine::MaxwellDMA:
+            PLOG_INFO << "Binding subchannel " << subchannel << " to Maxwell DMA";
+
+            subchannels[subchannel] = &maxwell::writeDMA;
+            break;
+        case Engine::Maxwell:
+            PLOG_INFO << "Binding subchannel " << subchannel << " to Maxwell";
+
+            subchannels[subchannel] = &maxwell::write;
+            break;
+        case Engine::Compute:
+            PLOG_INFO << "Binding subchannel " << subchannel << " to Compute";
+
+            subchannels[subchannel] = &compute::write;
+            break;
+        default:
+            PLOG_FATAL << "Unrecognized class ID " << std::hex << classID;
+
+            exit(0);
+    }
+}
+
 void submit(CommandListHeader header) {
     PLOG_INFO << "Submitting new command list (IOVA = " << std::hex << header.iova << ", size = " << std::dec << header.size << ", allow flush = " << header.allowFlush << ", is push buffer = " << header.isPushBuf << ", sync = " << header.sync << ")";
 
     for (u64 i = 0; i < header.size;) {
         Command command;
-        command.raw = read32(COMMAND_LIST_ADDRESS + header.iova + sizeof(u32) * i++);
+        command.raw = memory_manager::read32(header.iova + sizeof(u32) * i++);
 
         PLOG_VERBOSE << "Command word = " << std::hex << command.raw << " (opcode = " << std::dec << command.opcode << ", subchannel = " << command.subchannel << ", address = " << std::hex << command.address << ")";
 
         switch (command.opcode) {
+            case Opcode::UseTertiaryGRP0:
+                {
+                    PLOG_VERBOSE << "GRP0_USE_TERT";
+
+                    const u64 tertiaryOpcode = (command.raw >> 16) & 3;
+
+                    switch (tertiaryOpcode) {
+                        case GRP0Opcode::IncrementAddress:
+                            {
+                                PLOG_VERBOSE << "GRP0_INC_METHOD";
+
+                                u32 address = command.address;
+                                for (u32 j = 0; j < (command.data >> 2); j++) {
+                                    const u32 data = memory_manager::read32(header.iova + sizeof(u32) * i++);
+
+                                    if (subchannels[command.subchannel] == NULL) {
+                                        if (address != 0) {
+                                            PLOG_WARNING << "Subchannel " << command.subchannel << " is unbound";
+                                        } else {
+                                            bindSubchannel(command.subchannel, data);
+                                        }
+                                    } else {
+                                        subchannels[command.subchannel](address, data);
+                                    }
+
+                                    address++;
+                                }
+                            }
+                            break;
+                        default:
+                            PLOG_FATAL << "Unrecognized tertiary opcode " << tertiaryOpcode;
+
+                            exit(0);
+                    }
+                }
+                break;
             case Opcode::IncrementAddress:
                 {
                     PLOG_VERBOSE << "INC_METHOD";
 
                     u32 address = command.address;
                     for (u32 j = 0; j < command.data; j++) {
-                        PLOG_VERBOSE << "Data = " << std::hex << read32(COMMAND_LIST_ADDRESS + header.iova + sizeof(u32) * i++) << ", register = " << address++;
+                        const u32 data = memory_manager::read32(header.iova + sizeof(u32) * i++);
+
+                        if (subchannels[command.subchannel] == NULL) {
+                            if (address != 0) {
+                                PLOG_WARNING << "Subchannel " << command.subchannel << " is unbound";
+                            } else {
+                                bindSubchannel(command.subchannel, data);
+                            }
+                        } else {
+                            subchannels[command.subchannel](address, data);
+                        }
+
+                        address++;
                     }
                 }
                 break;
@@ -80,12 +199,30 @@ void submit(CommandListHeader header) {
 
                     const u32 address = command.address;
                     for (u32 j = 0; j < command.data; j++) {
-                        PLOG_VERBOSE << "Data = " << std::hex << read32(COMMAND_LIST_ADDRESS + header.iova + sizeof(u32) * i++) << ", register = " << address;
+                        const u32 data = memory_manager::read32(header.iova + sizeof(u32) * i++);
+
+                        if (subchannels[command.subchannel] == NULL) {
+                            if (address != 0) {
+                                PLOG_WARNING << "Subchannel " << command.subchannel << " is unbound";
+                            } else {
+                                bindSubchannel(command.subchannel, data);
+                            }
+                        } else {
+                            subchannels[command.subchannel](address, data);
+                        }
                     }
                 }
                 break;
             case Opcode::Immediate:
                 PLOG_VERBOSE << "IMMD_DATA_METHOD (data = " << std::hex << command.data << ", register = " << command.address << ")";
+
+                if (subchannels[command.subchannel] == NULL) {
+                    PLOG_FATAL << "Subchannel " << command.subchannel << " is unbound";
+
+                    exit(0);
+                }
+
+                subchannels[command.subchannel](command.address, command.data);
                 break;
             case Opcode::IncrementOnce:
                 {
@@ -95,7 +232,17 @@ void submit(CommandListHeader header) {
 
                     u32 address = command.address;
                     for (u32 j = 0; j < command.data; j++) {
-                        PLOG_VERBOSE << "Data = " << std::hex << read32(COMMAND_LIST_ADDRESS + header.iova + sizeof(u32) * i++) << ", register = " << address;
+                        const u32 data = memory_manager::read32(header.iova + sizeof(u32) * i++);
+
+                        if (subchannels[command.subchannel] == NULL) {
+                            if (address != 0) {
+                                PLOG_WARNING << "Subchannel " << command.subchannel << " is unbound";
+                            } else {
+                                bindSubchannel(command.subchannel, data);
+                            }
+                        } else {
+                            subchannels[command.subchannel](address, data);
+                        }
 
                         address += increment;
 

@@ -24,6 +24,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include/loader)
 include_directories(${PROJECT_SOURCE_DIR}/include/nvidia)
 include_directories(${PROJECT_SOURCE_DIR}/include/nvidia/channel)
 include_directories(${PROJECT_SOURCE_DIR}/include/nvidia/dev)
+include_directories(${PROJECT_SOURCE_DIR}/include/renderer)
 include_directories(${PROJECT_SOURCE_DIR}/include/sys)
 include_directories(${PROJECT_SOURCE_DIR}/include/sys/gpu)
 include_directories(${PROJECT_SOURCE_DIR}/external/dynarmic)
@@ -65,9 +66,16 @@ set(SOURCES
     src/nvidia/dev/nvhost_ctrl.cpp
     src/nvidia/dev/nvhost_ctrl_gpu.cpp
     src/nvidia/dev/nvmap.cpp
+    src/renderer/renderer.cpp
+    src/renderer/window.cpp
     src/sys/cpu.cpp
     src/sys/emulator.cpp
     src/sys/memory.cpp
+    src/sys/gpu/compute.cpp
+    src/sys/gpu/fermi.cpp
+    src/sys/gpu/kepler.cpp
+    src/sys/gpu/maxwell.cpp
+    src/sys/gpu/memory_manager.cpp
     src/sys/gpu/pfifo.cpp
 )
 
@@ -75,6 +83,7 @@ set(SOURCES
 set(HEADERS
     include/android/buffer_queue.hpp
     include/android/parcel.hpp
+    include/common/file.hpp
     include/common/types.hpp
     include/hle/handle.hpp
     include/hle/handle_table.hpp
@@ -105,15 +114,23 @@ set(HEADERS
     include/nvidia/dev/nvhost_ctrl.hpp
     include/nvidia/dev/nvhost_ctrl_gpu.hpp
     include/nvidia/dev/nvmap.hpp
+    include/renderer/renderer.hpp
+    include/renderer/window.hpp
     include/sys/cpu.hpp
     include/sys/emulator.hpp
     include/sys/memory.hpp
+    include/sys/gpu/compute.hpp
+    include/sys/gpu/fermi.hpp
+    include/sys/gpu/kepler.hpp
+    include/sys/gpu/maxwell.hpp
+    include/sys/gpu/maxwell_registers.hpp
+    include/sys/gpu/memory_manager.hpp
     include/sys/gpu/pfifo.hpp
 )
 
-find_package(SDL2 REQUIRED)
-include_directories(${PROJECT_NAME} ${SDL2_INCLUDE_DIRS})
+find_package(glfw3 REQUIRED)
+find_package(Vulkan REQUIRED)
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE dynarmic plog ${SDL2_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE dynarmic plog glfw Vulkan::Vulkan)

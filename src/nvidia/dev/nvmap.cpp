@@ -175,7 +175,7 @@ u64 getSizeFromID(u32 nvmapID, bool isHandle) {
         exit(0);
     }
 
-    return nvmapObjects[nvmapID].address;
+    return nvmapObjects[nvmapID].size;
 }
 
 }
