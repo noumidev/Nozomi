@@ -41,7 +41,8 @@ namespace SupervisorCall {
         QueryMemory = 0x06,
         ExitProcess,
         MapSharedMemory = 0x13,
-        CreateTransferMemory = 0x15,
+        UnmapSharedMemory,
+        CreateTransferMemory,
         CloseHandle,
         ResetSignal,
         WaitSynchronization,
@@ -133,6 +134,9 @@ void handleSVC(u32 svc) {
             break;
         case SupervisorCall::MapSharedMemory:
             svcMapSharedMemory();
+            break;
+        case SupervisorCall::UnmapSharedMemory:
+            svcUnmapSharedMemory();
             break;
         case SupervisorCall::CreateTransferMemory:
             svcCreateTransferMemory();
@@ -514,6 +518,38 @@ void svcSignalProcessWideKey() {
     const i32 value = (i32)sys::cpu::get(1);
 
     PLOG_WARNING << "svcSignalProcessWideKey (address = " << std::hex << address << ", value = " << std::dec << value << ") (stubbed)";
+
+    sys::cpu::set(0, KernelResult::Success);
+}
+
+void svcUnmapSharedMemory() {
+    Handle handle = hle::makeHandle((u32)sys::cpu::get(0));
+    const u64 address = sys::cpu::get(1);
+    const u64 size = sys::cpu::get(2);
+
+    PLOG_INFO << "svcUnmapSharedMemory (handle = " << std::hex << handle.raw << ", address = " << address << ", size = " << size << ")";
+
+    if (!sys::memory::isAligned(address) || !sys::memory::isAligned(size)) {
+        PLOG_FATAL << "Unaligned shared memory address/size";
+
+        exit(0);
+    }
+
+    if (handle.type != HandleType::KSharedMemory) {
+        PLOG_FATAL << "Invalid handle type";
+
+        exit(0);
+    }
+
+    KSharedMemory *sharedMemory = (KSharedMemory *)kernel::getObject(handle);
+
+    sharedMemory->unmap(address, size);
+
+    if (sharedMemory->getRefCount() == 1) {
+        kernel::closeHandle(handle);
+    } else {
+        sharedMemory->close();
+    }
 
     sys::cpu::set(0, KernelResult::Success);
 }

@@ -39,6 +39,7 @@ void svcSendSyncRequest();
 void svcSetHeapSize();
 void svcSetMemoryAttribute();
 void svcSignalProcessWideKey();
+void svcUnmapSharedMemory();
 void svcWaitSynchronization();
 
 }
