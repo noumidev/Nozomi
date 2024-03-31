@@ -85,7 +85,7 @@ void cmdGetServiceHandle(IPCContext &ctx, IPCContext &reply) {
 
     PLOG_INFO << "GetServiceHandle (service = " << serviceName << ")";
 
-    reply.makeReply(2, 0, 1);
+    reply.makeReply(2, 0, 1, true);
     reply.write(KernelResult::Success);
     reply.moveHandle(kernel::makeServiceSession(serviceName));
 }
