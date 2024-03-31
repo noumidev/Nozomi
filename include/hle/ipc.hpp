@@ -358,6 +358,23 @@ public:
         }
     }
 
+    KService *getDomainObject(int objectID) {
+        if (!isDomain() || (getDomainHeader().numInput == 0)) {
+            PLOG_FATAL << "Invalid domain object";
+
+            exit(0);
+        }
+
+        const Handle handle = ((KServiceSession *)getService())->getDomainObjectHandle(objectID);
+        if (handle.type != HandleType::KService) {
+            PLOG_FATAL << "Invalid domain object type";
+
+            exit(0);
+        }
+
+        return (KService *)kernel::getObject(handle);
+    }
+
     void marshal() {
         setOffset(0);
 
@@ -493,12 +510,6 @@ public:
 
             if ((domainHeader.command != DomainCommand::SendMessage) && (domainHeader.command != DomainCommand::CloseVirtualHandle)) {
                 PLOG_FATAL << "Invalid domain command";
-
-                exit(0);
-            }
-
-            if (domainHeader.numInput != 0) {
-                PLOG_FATAL << "Unimplemented input objects";
 
                 exit(0);
             }

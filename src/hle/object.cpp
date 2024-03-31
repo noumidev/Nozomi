@@ -47,6 +47,26 @@ int KDomain::add(Handle handle) {
     return domainHandles.size();
 }
 
+void KDomain::remove(int objectID) {
+    if ((objectID < 1) || (objectID > (int)domainHandles.size())) {
+        PLOG_FATAL << "Object ID out of bounds";
+
+        exit(0);
+    }
+
+    domainHandles[objectID - 1] = Handle{.raw = 0};
+}
+
+Handle KDomain::getDomainObjectHandle(int objectID) {
+    if (objectID > (int)domainHandles.size()) {
+        PLOG_FATAL << "Object ID out of bounds";
+
+        exit(0);
+    }
+
+    return domainHandles[objectID - 1];
+}
+
 void KDomain::handleRequest(int objectID, IPCContext &ctx, IPCContext &reply) {
     if (objectID > (int)domainHandles.size()) {
         PLOG_FATAL << "Object ID out of bounds";
@@ -56,7 +76,14 @@ void KDomain::handleRequest(int objectID, IPCContext &ctx, IPCContext &reply) {
 
     assert(objectID != 1); // This is a special case
 
-    ((KService *)kernel::getObject(domainHandles[objectID - 1]))->handleRequest(ctx, reply);
+    KService *service = (KService *)kernel::getObject(domainHandles[objectID - 1]);
+    if (service == NULL) {
+        PLOG_FATAL << "Invalid virtual handle";
+
+        exit(0);
+    }
+
+    service->handleRequest(ctx, reply);
 }
 
 KObject::KObject() : handle(Handle{.raw = 0}), refCount(0) {

@@ -45,6 +45,9 @@ public:
     void makeDomain();
 
     int add(Handle handle);
+    void remove(int objectID);
+
+    Handle getDomainObjectHandle(int objectID);
 
     void handleRequest(int objectID, IPCContext &ctx, IPCContext &reply);
 };
