@@ -118,6 +118,12 @@ void sendSyncRequest(Handle handle, u64 ipcMessage) {
             {
                 const int objectID = (int)ctx.getObjectID();
                 if (ctx.isDomain() && (objectID > 1)) {
+                    if (ctx.getDomainHeader().command == DomainCommand::CloseVirtualHandle) {
+                        PLOG_WARNING << "Unimplemented CloseVirtualHandle";
+
+                        return;
+                    }
+
                     ((KServiceSession *)session)->handleRequest(objectID, ctx, reply);
                 } else {
                     if (session->getHandle().type == HandleType::KService) { // Bypass service table
