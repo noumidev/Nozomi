@@ -417,13 +417,17 @@ public:
         write(dataPayloadHeader.magic);
         write(dataPayloadHeader.version);
 
-        setOffset(sizeof(u32) * header.dataSize);
-
         if (isDomain() && (numDomainObjects != 0)) {
-            for (u32 domainObject = 0; domainObject < numDomainObjects; domainObject++) {
-                PLOG_VERBOSE << "New domain object " << domainObject << " = " << std::hex << moveHandles[domainObject].raw;
+            setOffset(4 * header.dataSize);
 
-                write(((KServiceSession *)service)->add(moveHandles[domainObject]));
+            header.dataSize += numDomainObjects;
+
+            for (u32 domainObject = 0; domainObject < numDomainObjects; domainObject++) {
+                PLOG_VERBOSE << "New domain object = " << std::hex << moveHandles[domainObject].raw;
+
+                const Handle handle = moveHandles[domainObject];
+
+                write(((KServiceSession *)service)->add(handle));
             }
         }
 
