@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "ipc.hpp"
 #include "object.hpp"
 #include "types.hpp"
@@ -119,7 +121,26 @@ public:
     void handleRequest(IPCContext &ctx, IPCContext &reply) override;
 };
 
+class LibraryAppletAccessor : public KService {
+    Handle appletStateChangedEvent;
+
+    void cmdGetAppletStateChangedEvent(IPCContext &ctx, IPCContext &reply);
+
+public:
+    LibraryAppletAccessor();
+    ~LibraryAppletAccessor();
+
+    const char *getName() override {
+        return "LibraryAppletAccessor";
+    }
+
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
+};
+
 class LibraryAppletCreator : public KService {
+    void cmdCreateLibraryApplet(IPCContext &ctx, IPCContext &reply);
+    void cmdCreateStorage(IPCContext &ctx, IPCContext &reply);
+
 public:
     LibraryAppletCreator();
     ~LibraryAppletCreator();
@@ -132,9 +153,11 @@ public:
 };
 
 class SelfController : public KService {
+    Handle libraryAppletLaunchableEvent;
     Handle accumulatedSuspendedTickChangedEvent;
 
     void cmdGetAccumulatedSuspendedTickChangedEvent(IPCContext &ctx, IPCContext &reply);
+    void cmdGetLibraryAppletLaunchableEvent(IPCContext &ctx, IPCContext &reply);
     void cmdSetFocusHandlingMode(IPCContext &ctx, IPCContext &reply);
     void cmdSetOperationModeChangedNotification(IPCContext &ctx, IPCContext &reply);
     void cmdSetOutOfFocusSuspendingEnabled(IPCContext &ctx, IPCContext &reply);
@@ -149,6 +172,40 @@ public:
     }
 
     void handleRequest(IPCContext &ctx, IPCContext &reply) override;
+};
+
+class Storage : public KService {
+    void cmdOpen(IPCContext &ctx, IPCContext &reply);
+
+public:
+    Storage();
+    ~Storage();
+
+    std::vector<u8> data;
+
+    const char *getName() override {
+        return "IStorage";
+    }
+
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
+};
+
+class StorageAccessor : public KService {
+    Handle storageHandle;
+
+    void cmdWrite(IPCContext &ctx, IPCContext &reply);
+
+public:
+    StorageAccessor();
+    ~StorageAccessor();
+
+    const char *getName() override {
+        return "IStorageAccessor";
+    }
+
+    void handleRequest(IPCContext &ctx, IPCContext &reply) override;
+
+    void setStorageHandle(Handle handle);
 };
 
 class WindowController : public KService {

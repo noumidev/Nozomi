@@ -18,6 +18,7 @@
 
 #include "applet_oe.hpp"
 
+#include <cstdlib>
 #include <cstring>
 
 #include <plog/Log.h>
@@ -63,13 +64,39 @@ namespace CommonStateGetterCommand {
     };
 }
 
+namespace LibraryAppletAccessorCommand {
+    enum : u32 {
+        GetAppletStateChangedEvent = 0,
+    };
+}
+
+namespace LibraryAppletCreatorCommand {
+    enum : u32 {
+        CreateLibraryApplet = 0,
+        CreateStorage = 10,
+    };
+}
+
 namespace SelfControllerCommand {
     enum : u32 {
+        GetLibraryAppletLaunchableEvent = 9,
         SetOperationModeChangedNotification = 11,
         SetPerformanceModeChangedNotification,
         SetFocusHandlingMode,
         SetOutOfFocusSuspendingEnabled = 16,
         GetAccumulatedSuspendedTickChangedEvent = 91,
+    };
+}
+
+namespace StorageCommand {
+    enum : u32 {
+        Open = 0,
+    };
+}
+
+namespace StorageAccessorCommand {
+    enum : u32 {
+        Write = 10,
     };
 }
 
@@ -397,20 +424,80 @@ void DisplayController::handleRequest(IPCContext &ctx, IPCContext &reply) {
     }
 }
 
-LibraryAppletCreator::LibraryAppletCreator() {}
+LibraryAppletAccessor::LibraryAppletAccessor() {}
 
-LibraryAppletCreator::~LibraryAppletCreator() {}
+LibraryAppletAccessor::~LibraryAppletAccessor() {}
 
-void LibraryAppletCreator::handleRequest(IPCContext &ctx, IPCContext &reply) {
-    (void)reply;
-
+void LibraryAppletAccessor::handleRequest(IPCContext &ctx, IPCContext &reply) {
     const u32 command = ctx.getCommand();
     switch (command) {
+        case LibraryAppletAccessorCommand::GetAppletStateChangedEvent:
+            return cmdGetAppletStateChangedEvent(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
             exit(0);
     }
+}
+
+void LibraryAppletAccessor::cmdGetAppletStateChangedEvent(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
+
+    PLOG_INFO << "GetAppletStateChangedEvent";
+
+    if (appletStateChangedEvent.type == HandleType::None) {
+        appletStateChangedEvent = kernel::makeEvent(true);
+    }
+
+    reply.makeReply(2, 1);
+    reply.write(KernelResult::Success);
+    reply.copyHandle(appletStateChangedEvent);
+}
+
+LibraryAppletCreator::LibraryAppletCreator() {}
+
+LibraryAppletCreator::~LibraryAppletCreator() {}
+
+void LibraryAppletCreator::handleRequest(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
+    switch (command) {
+        case LibraryAppletCreatorCommand::CreateLibraryApplet:
+            return cmdCreateLibraryApplet(ctx, reply);
+        case LibraryAppletCreatorCommand::CreateStorage:
+            return cmdCreateStorage(ctx, reply);
+        default:
+            PLOG_FATAL << "Unimplemented command " << command;
+
+            exit(0);
+    }
+}
+
+void LibraryAppletCreator::cmdCreateLibraryApplet(IPCContext &ctx, IPCContext &reply) {
+    u32 appletID;
+    u32 libraryAppletMode;
+
+    std::memcpy(&appletID, &((u8 *)ctx.getData())[0], sizeof(u32));
+    std::memcpy(&libraryAppletMode, &((u8 *)ctx.getData())[4], sizeof(u32));
+
+    PLOG_INFO << "CreateLibraryApplet (applet ID = " << std::hex << appletID << ", library applet mode = " << libraryAppletMode << ")";
+
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(kernel::makeService<LibraryAppletAccessor>());
+}
+
+void LibraryAppletCreator::cmdCreateStorage(IPCContext &ctx, IPCContext &reply) {
+    u64 size;
+    std::memcpy(&size, ctx.getData(), sizeof(u64));
+
+    PLOG_INFO << "CreateStorage (size = " << std::hex << size << ")";
+
+    const Handle handle = kernel::makeService<Storage>();
+    ((Storage *)kernel::getObject(handle))->data.resize(size);
+
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(handle);
 }
 
 SelfController::SelfController() : accumulatedSuspendedTickChangedEvent(Handle{.raw = 0ULL}) {}
@@ -420,6 +507,8 @@ SelfController::~SelfController() {}
 void SelfController::handleRequest(IPCContext &ctx, IPCContext &reply) {
     const u32 command = ctx.getCommand();
     switch (command) {
+        case SelfControllerCommand::GetLibraryAppletLaunchableEvent:
+            return cmdGetLibraryAppletLaunchableEvent(ctx, reply);
         case SelfControllerCommand::SetOperationModeChangedNotification:
             return cmdSetOperationModeChangedNotification(ctx, reply);
         case SelfControllerCommand::SetPerformanceModeChangedNotification:
@@ -449,6 +538,20 @@ void SelfController::cmdGetAccumulatedSuspendedTickChangedEvent(IPCContext &ctx,
     reply.makeReply(2, 1);
     reply.write(KernelResult::Success);
     reply.copyHandle(accumulatedSuspendedTickChangedEvent);
+}
+
+void SelfController::cmdGetLibraryAppletLaunchableEvent(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
+
+    PLOG_INFO << "GetLibraryAppletLaunchableEvent";
+
+    if (libraryAppletLaunchableEvent.type == HandleType::None) {
+        libraryAppletLaunchableEvent = kernel::makeEvent(true);
+    }
+
+    reply.makeReply(2, 1);
+    reply.write(KernelResult::Success);
+    reply.copyHandle(libraryAppletLaunchableEvent);
 }
 
 void SelfController::cmdSetFocusHandlingMode(IPCContext &ctx, IPCContext &reply) {
@@ -488,6 +591,68 @@ void SelfController::cmdSetPerformanceModeChangedNotification(IPCContext &ctx, I
 
     PLOG_INFO << "SetPerformanceModeChangedNotification (notification = " << std::hex << (u32)performanceModeChangedNotification << ") (stubbed)";
 
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
+}
+
+Storage::Storage() {}
+
+Storage::~Storage() {}
+
+void Storage::handleRequest(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
+    switch (command) {
+        case StorageCommand::Open:
+            return cmdOpen(ctx, reply);
+        default:
+            PLOG_FATAL << "Unimplemented command " << command;
+
+            exit(0);
+    }
+}
+
+void Storage::cmdOpen(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
+
+    PLOG_INFO << "Open";
+
+    const Handle handle = kernel::makeService<StorageAccessor>();
+    ((StorageAccessor *)kernel::getObject(handle))->setStorageHandle(getHandle());
+
+    reply.makeReply(2, 0, 1);
+    reply.write(KernelResult::Success);
+    reply.moveHandle(handle);
+}
+
+StorageAccessor::StorageAccessor() {}
+
+StorageAccessor::~StorageAccessor() {}
+
+void StorageAccessor::handleRequest(IPCContext &ctx, IPCContext &reply) {
+    const u32 command = ctx.getCommand();
+    switch (command) {
+        case StorageAccessorCommand::Write:
+            return cmdWrite(ctx, reply);
+        default:
+            PLOG_FATAL << "Unimplemented command " << command;
+
+            exit(0);
+    }
+}
+
+void StorageAccessor::setStorageHandle(Handle handle) {
+    storageHandle = handle;
+}
+
+void StorageAccessor::cmdWrite(IPCContext &ctx, IPCContext &reply) {
+    PLOG_INFO << "Write";
+
+    Storage *storage = (Storage *)kernel::getObject(storageHandle);
+
+    const std::vector<u8> data = ctx.readSend();
+
+    std::memcpy(storage->data.data(), data.data(), data.size());
+    
     reply.makeReply(2);
     reply.write(KernelResult::Success);
 }
