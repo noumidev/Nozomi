@@ -40,6 +40,7 @@ namespace Code {
         QueueBuffer = 7,
         CancelBuffer,
         Connect = 10,
+        Disconnect,
         SetPreallocatedBuffer = 14,
     };
 }
@@ -257,6 +258,20 @@ Status connect(Parcel &in, Parcel &out) {
     return StatusCode::NoError;
 }
 
+Status disconnect(Parcel &in, Parcel &out) {
+    // Output parcel is unused
+    (void)out;
+
+    const u32 api = in.read<u32>();
+
+    PLOG_VERBOSE << "DISCONNECT (API = " << api << ")";
+
+    std::array<BufferQueue, MAX_BUFFER_QUEUES> bq;
+    bufferQueues.swap(bq);
+
+    return StatusCode::NoError;
+}
+
 Status setPreallocatedBuffer(Parcel &in, Parcel &out) {
     // Output parcel is unused
     (void)out;
@@ -346,6 +361,9 @@ void transact(IPCContext &ctx, u32 code, u32 flags) {
             break;
         case Code::Connect:
             status = connect(in, out);
+            break;
+        case Code::Disconnect:
+            status = disconnect(in, out);
             break;
         case Code::SetPreallocatedBuffer:
             status = setPreallocatedBuffer(in, out);
