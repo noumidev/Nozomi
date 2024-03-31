@@ -50,6 +50,8 @@ namespace ApplicationDisplayServiceCommand {
         GetManagerDisplayService,
         GetIndirectDisplayTransactionService,
         OpenDisplay = 1010,
+        CloseDisplay = 1020,
+        CloseLayer = 2021,
         SetLayerScalingMode = 2101,
     };
 }
@@ -123,6 +125,10 @@ void ApplicationDisplayService::handleRequest(IPCContext &ctx, IPCContext &reply
             return cmdGetIndirectDisplayTransactionService(ctx, reply);
         case ApplicationDisplayServiceCommand::OpenDisplay:
             return cmdOpenDisplay(ctx, reply);
+        case ApplicationDisplayServiceCommand::CloseDisplay:
+            return cmdCloseDisplay(ctx, reply);
+        case ApplicationDisplayServiceCommand::CloseLayer:
+            return cmdCloseLayer(ctx, reply);
         case ApplicationDisplayServiceCommand::SetLayerScalingMode:
             return cmdSetLayerScalingMode(ctx, reply);
         default:
@@ -130,6 +136,26 @@ void ApplicationDisplayService::handleRequest(IPCContext &ctx, IPCContext &reply
 
             exit(0);
     }
+}
+
+void ApplicationDisplayService::cmdCloseDisplay(IPCContext &ctx, IPCContext &reply) {
+    u64 displayID;
+    std::memcpy(&displayID, ctx.getData(), sizeof(u64));
+
+    PLOG_INFO << "CloseDisplay (display ID = " << displayID << ") (stubbed)";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
+}
+
+void ApplicationDisplayService::cmdCloseLayer(IPCContext &ctx, IPCContext &reply) {
+    u64 layerID;
+    std::memcpy(&layerID, ctx.getData(), sizeof(u64));
+
+    PLOG_INFO << "CloseLayer (layer ID = " << layerID << ") (stubbed)";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
 void ApplicationDisplayService::cmdGetIndirectDisplayTransactionService(IPCContext &ctx, IPCContext &reply) {

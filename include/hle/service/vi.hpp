@@ -29,6 +29,8 @@ void managerHandleRequest(IPCContext &ctx, IPCContext &reply);
 void cmdGetDisplayService(IPCContext &ctx, IPCContext &reply);
 
 class ApplicationDisplayService : public KService {
+    void cmdCloseDisplay(IPCContext &ctx, IPCContext &reply);
+    void cmdCloseLayer(IPCContext &ctx, IPCContext &reply);
     void cmdGetIndirectDisplayTransactionService(IPCContext &ctx, IPCContext &reply);
     void cmdGetManagerDisplayService(IPCContext &ctx, IPCContext &reply);
     void cmdGetRelayService(IPCContext &ctx, IPCContext &reply);
