@@ -319,6 +319,31 @@ void map(void *mem, u64 address, u64 pageNum, u32 type, u32 attribute, u32 permi
     memoryBlockRecord.push_back(memoryBlock);
 }
 
+void unmap(u64 address, u64 pageNum) {
+    PLOG_DEBUG << "Unmapping " << pageNum << " pages @ " << std::hex << address;
+
+    // Delete memory block
+    for (auto it = memoryBlockRecord.begin(); it != memoryBlockRecord.end(); it++) {
+        if (it->baseAddress == address) {
+            memoryBlockRecord.erase(it);
+            break;
+        }
+
+        if (it == memoryBlockRecord.end()) {
+            PLOG_FATAL << "Unable to find memory block with base address " << std::hex << address;
+
+            exit(0);
+        }
+    }
+
+    const u64 basePage = address >> PAGE_SHIFT;
+
+    for (u64 page = basePage; page < (basePage + pageNum); page++) {
+        readTable[page] = NULL;
+        writeTable[page] = NULL;
+    }
+}
+
 // Allocates linear block of memory, returns pointer to allocated block (or NULL)
 void *allocate(u64 baseAddress, u64 pageNum, u32 type, u32 attribute, u32 permission) {
     PLOG_DEBUG << "Allocating " << pageNum << " pages @ " << std::hex << baseAddress << " " << getPermissionString(permission);
