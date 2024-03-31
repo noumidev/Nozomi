@@ -62,6 +62,8 @@ public:
 
     Handle getHandle();
 
+    int getRefCount();
+
     void setHandle(Handle handle);
 
     void open();
@@ -129,6 +131,7 @@ public:
     void *getMem();
 
     void map(u64 address, u64 size, u32 permission);
+    void unmap(u64 address, u64 size);
 };
 
 class KTransferMemory : public KObject {

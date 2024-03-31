@@ -69,6 +69,10 @@ Handle KObject::getHandle() {
     return handle;
 }
 
+int KObject::getRefCount() {
+    return refCount;
+}
+
 void KObject::setHandle(Handle handle) {
     this->handle = handle;
 }
@@ -168,6 +172,20 @@ void KSharedMemory::map(u64 address, u64 size, u32 permission) {
     }
 
     sys::memory::map(mem, address, size >> sys::memory::PAGE_SHIFT, 0, 0, permission);
+}
+
+void KSharedMemory::unmap(u64 address, u64 size) {
+    if (size != this->size) {
+        PLOG_FATAL << "Size mismatch";
+
+        exit(0);
+    }
+
+    if (getRefCount() == 1) { // UnmapSharedMemory deletes this object
+        free(mem);
+    }
+
+    sys::memory::unmap(address, size >> sys::memory::PAGE_SHIFT);
 }
 
 KTransferMemory::KTransferMemory(u64 address, u64 size) : address(address), size(size) {}
