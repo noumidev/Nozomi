@@ -302,6 +302,10 @@ public:
         return &ipcBuffer[dataPayloadOffset + 4 * sizeof(u32)];
     }
 
+    DomainHeader getDomainHeader() {
+        return domainHeader;
+    }
+
     u64 getCommand() {
         return dataPayloadHeader.command;
     }
@@ -500,9 +504,8 @@ public:
             }
 
             if (domainHeader.command == DomainCommand::CloseVirtualHandle) {
-                PLOG_FATAL << "Unimplemented CloseVirtualHandle";
-
-                exit(0);
+                // CloseVirtualHandle does not have a data payload
+                return;
             }
 
             advance(sizeof(u64));
