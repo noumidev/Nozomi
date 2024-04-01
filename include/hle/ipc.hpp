@@ -177,6 +177,7 @@ class IPCContext {
     u64 offset;
 
     u64 dataAlignment;
+    bool firstAlign;
 
     Header header;
     HandleDescriptor handleDescriptor;
@@ -213,12 +214,21 @@ class IPCContext {
             return;
         }
 
+        constexpr u64 alignmentMask = MAX_DATA_ALIGNMENT - 1;
+
+        if (firstAlign) {
+            firstAlign = false;
+
+            if ((offset & alignmentMask) == 0) {
+                return;
+            }
+        }
+
         if (dataAlignment != MAX_DATA_ALIGNMENT) {
             advance(dataAlignment);
 
             dataAlignment = 0;
         } else {
-            constexpr u64 alignmentMask = MAX_DATA_ALIGNMENT - 1;
             const u64 oldAlignment = offset & alignmentMask;
 
             if (oldAlignment != 0) {
@@ -243,14 +253,14 @@ class IPCContext {
     }
 
 public:
-    IPCContext(void *ipcPointer) : ipcPointer(ipcPointer), service(NULL), dataAlignment(MAX_DATA_ALIGNMENT), header(), handleDescriptor(), domainHeader(), dataPayloadHeader(), numDomainObjects(0), pid(0), copyHandlesOffset(0ULL), moveHandlesOffset(0ULL), domainHeaderOffset(0ULL), dataPayloadOffset(0ULL) {
+    IPCContext(void *ipcPointer) : ipcPointer(ipcPointer), service(NULL), dataAlignment(MAX_DATA_ALIGNMENT), firstAlign(true), header(), handleDescriptor(), domainHeader(), dataPayloadHeader(), numDomainObjects(0), pid(0), copyHandlesOffset(0ULL), moveHandlesOffset(0ULL), domainHeaderOffset(0ULL), dataPayloadOffset(0ULL) {
         setOffset(0ULL);
 
         std::memset(ipcBuffer, 0, IPC_BUFFER_SIZE);
         std::memset(pointerDescriptorOffset, 0, sizeof(pointerDescriptorOffset));
     }
 
-    IPCContext(void *ipcPointer, KObject *service) : ipcPointer(ipcPointer), service(service), dataAlignment(MAX_DATA_ALIGNMENT), header(), handleDescriptor(), domainHeader(), dataPayloadHeader(), numDomainObjects(0), pid(0), copyHandlesOffset(0ULL), moveHandlesOffset(0ULL), domainHeaderOffset(0ULL), dataPayloadOffset(0ULL) {
+    IPCContext(void *ipcPointer, KObject *service) : ipcPointer(ipcPointer), service(service), dataAlignment(MAX_DATA_ALIGNMENT), firstAlign(true), header(), handleDescriptor(), domainHeader(), dataPayloadHeader(), numDomainObjects(0), pid(0), copyHandlesOffset(0ULL), moveHandlesOffset(0ULL), domainHeaderOffset(0ULL), dataPayloadOffset(0ULL) {
         setOffset(0ULL);
 
         std::memset(ipcBuffer, 0, IPC_BUFFER_SIZE);
