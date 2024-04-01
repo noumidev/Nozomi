@@ -29,11 +29,14 @@ namespace loader::nro {
 
 constexpr const char *NRO_MAGIC = "NRO0";
 
+constexpr u64 ARGV0_ADDR = sys::memory::MemoryBase::HomebrewEnv + sys::memory::PAGE_SIZE - ARGV0_MAX_SIZE;
+
 constexpr u64 NRO_HEADER_SIZE = 0x80;
 
 namespace HeaderOffset {
     enum {
         Magic = 0x10,
+        Size = 0x18,
         TextSegment = 0x20,
         RoSegment = 0x28,
         DataSegment = 0x30,
@@ -66,6 +69,7 @@ namespace EnvContextKey {
     enum : u32 {
         EndOfList = 0,
         MainThreadHandle = 1,
+        Argv = 5,
         AppletType = 7,
     };
 }
@@ -79,11 +83,14 @@ struct EnvContextEntry {
 constexpr EnvContextEntry envContextTable[] = {
     EnvContextEntry{.key = EnvContextKey::MainThreadHandle, .flags = 1, .value{1, 0}}, // Main thread handle = 1
     EnvContextEntry{.key = EnvContextKey::AppletType, .flags = 1, .value{0, 0}}, // Applet type = Application
+    EnvContextEntry{.key = EnvContextKey::Argv, .flags = 1, .value{0, ARGV0_ADDR}}, // argv[0]
     EnvContextEntry{.key = EnvContextKey::EndOfList, .flags = 1, .value{0, 0}},
 };
 
 void load(FILE *file) {
     // Try loading NRO header into buffer
+    std::fseek(file, 0, SEEK_END);
+    const u64 fileSize = std::ftell(file);
     std::fseek(file, 0, SEEK_SET);
 
     u8 header[NRO_HEADER_SIZE];
@@ -116,7 +123,7 @@ void load(FILE *file) {
         exit(0);
     }
 
-    void *textPointer = sys::memory::allocate(applicationBase, text.size / sys::memory::PAGE_SIZE, 0, 0, sys::memory::MemoryPermission::RX);
+    void *textPointer = sys::memory::allocate(applicationBase + text.offset, text.size / sys::memory::PAGE_SIZE, 0, 0, sys::memory::MemoryPermission::RX);
 
     if (textPointer == NULL) {
         PLOG_FATAL << "Failed to allocate memory for .text";
@@ -139,7 +146,7 @@ void load(FILE *file) {
         exit(0);
     }
 
-    void *roPointer = sys::memory::allocate(applicationBase + text.size, ro.size / sys::memory::PAGE_SIZE, 0, 0, sys::memory::MemoryPermission::R);
+    void *roPointer = sys::memory::allocate(applicationBase + ro.offset, ro.size / sys::memory::PAGE_SIZE, 0, 0, sys::memory::MemoryPermission::R);
 
     if (roPointer == NULL) {
         PLOG_FATAL << "Failed to allocate memory for .ro";
@@ -163,7 +170,7 @@ void load(FILE *file) {
         exit(0);
     }
 
-    void *dataPointer = sys::memory::allocate(applicationBase + text.size + ro.size, dataSize / sys::memory::PAGE_SIZE, 0, 0, sys::memory::MemoryPermission::RW);
+    void *dataPointer = sys::memory::allocate(applicationBase + data.offset, dataSize / sys::memory::PAGE_SIZE, 0, 0, sys::memory::MemoryPermission::RW);
 
     if (dataPointer == NULL) {
         PLOG_FATAL << "Failed to allocate memory for .data";
@@ -195,12 +202,35 @@ void load(FILE *file) {
 
     sys::memory::setAppSize(text.size + ro.size + dataSize);
 
-    // TODO: check for assets
+    // Check for assets
+    u32 nroSize;
+    std::memcpy(&nroSize, &header[HeaderOffset::Size], sizeof(u32));
+
+    if (fileSize > nroSize) {
+        u32 assetSize = fileSize - nroSize;
+        if (!sys::memory::isAligned(assetSize)) {
+            PLOG_WARNING << "romFS size not aligned";
+
+            assetSize = (assetSize | sys::memory::PAGE_MASK) + 1;
+        }
+
+        void *assetPointer = sys::memory::allocate(applicationBase + data.offset + dataSize, assetSize / sys::memory::PAGE_SIZE, 0, 0, sys::memory::MemoryPermission::R);
+
+        std::fread(assetPointer, sizeof(u8), assetSize, file);
+    }
+
+    std::fclose(file);
 }
 
 void makeHomebrewEnv() {
     void *homebrewEnv = sys::memory::allocate(sys::memory::MemoryBase::HomebrewEnv, 1, 0, 0, sys::memory::MemoryPermission::R);
     std::memcpy(homebrewEnv, envContextTable, sizeof(envContextTable));
+}
+
+void setNROPath(const char *path) {
+    PLOG_DEBUG << "NRO path = " << path;
+
+    std::memcpy(sys::memory::getPointer(ARGV0_ADDR), path, std::strlen(path) + 1);
 }
 
 bool isNRO(FILE *file) {

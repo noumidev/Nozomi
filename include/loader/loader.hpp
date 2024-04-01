@@ -19,5 +19,7 @@
 #pragma once
 
 namespace loader {
-    void load(const char *path);
+
+void load(const char *path);
+
 }

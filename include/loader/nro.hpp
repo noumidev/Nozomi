@@ -20,10 +20,18 @@
 
 #include <cstdio>
 
+#include "types.hpp"
+
 namespace loader::nro {
-    void load(FILE *file);
 
-    void makeHomebrewEnv();
+constexpr u64 ARGV0_MAX_SIZE = 256;
 
-    bool isNRO(FILE *file);
+void load(FILE *file);
+
+void makeHomebrewEnv();
+
+void setNROPath(const char *path);
+
+bool isNRO(FILE *file);
+
 }

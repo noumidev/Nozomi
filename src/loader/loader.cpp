@@ -20,6 +20,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 #include <plog/Log.h>
 
@@ -47,6 +48,16 @@ void load(const char *path) {
 
         nro::load(file);
         nro::makeHomebrewEnv();
+
+        const char *name = std::strrchr(path, '/');
+
+        char nroPath[nro::ARGV0_MAX_SIZE];
+        std::memset(nroPath, 0, sizeof(nroPath));
+
+        std::strcat(nroPath, "sdmc:/switch");
+        std::strcat(nroPath, name);
+
+        nro::setNROPath(nroPath);
 
         sys::cpu::set(0, sys::memory::MemoryBase::HomebrewEnv);
         sys::cpu::set(1, -1LL);
