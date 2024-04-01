@@ -67,6 +67,10 @@ namespace CommonStateGetterCommand {
 namespace LibraryAppletAccessorCommand {
     enum : u32 {
         GetAppletStateChangedEvent = 0,
+        Start = 10,
+        GetResult = 30,
+        PushInData = 100,
+        PopOutData,
     };
 }
 
@@ -79,6 +83,7 @@ namespace LibraryAppletCreatorCommand {
 
 namespace SelfControllerCommand {
     enum : u32 {
+        Exit = 0,
         GetLibraryAppletLaunchableEvent = 9,
         SetOperationModeChangedNotification = 11,
         SetPerformanceModeChangedNotification,
@@ -433,6 +438,14 @@ void LibraryAppletAccessor::handleRequest(IPCContext &ctx, IPCContext &reply) {
     switch (command) {
         case LibraryAppletAccessorCommand::GetAppletStateChangedEvent:
             return cmdGetAppletStateChangedEvent(ctx, reply);
+        case LibraryAppletAccessorCommand::Start:
+            return cmdStart(ctx, reply);
+        case LibraryAppletAccessorCommand::GetResult:
+            return cmdGetResult(ctx, reply);
+        case LibraryAppletAccessorCommand::PushInData:
+            return cmdPushInData(ctx, reply);
+        case LibraryAppletAccessorCommand::PopOutData:
+            return cmdPopOutData(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
@@ -452,6 +465,49 @@ void LibraryAppletAccessor::cmdGetAppletStateChangedEvent(IPCContext &ctx, IPCCo
     reply.makeReply(2, 1);
     reply.write(KernelResult::Success);
     reply.copyHandle(appletStateChangedEvent);
+}
+
+void LibraryAppletAccessor::cmdGetResult(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
+
+    PLOG_INFO << "GetResult (stubbed)";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
+}
+
+void LibraryAppletAccessor::cmdPopOutData(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
+
+    PLOG_INFO << "PopOutData (stubbed)";
+
+    // TODO: what does this do?
+
+    reply.makeReply(2);
+    reply.write(KernelResult::NoDataInChannel);
+}
+
+void LibraryAppletAccessor::cmdPushInData(IPCContext &ctx, IPCContext &reply) {
+    int objectID;
+    std::memcpy(&objectID, ctx.getData(), sizeof(int));
+
+    KService *storage = ctx.getDomainObject(objectID);
+
+    PLOG_INFO << "PushInData (handle = " << std::hex << storage->getHandle().raw << ") (stubbed)";
+
+    // TODO: what does this do?
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
+}
+
+void LibraryAppletAccessor::cmdStart(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
+
+    PLOG_INFO << "Start (stubbed)";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
 LibraryAppletCreator::LibraryAppletCreator() {}
@@ -507,6 +563,8 @@ SelfController::~SelfController() {}
 void SelfController::handleRequest(IPCContext &ctx, IPCContext &reply) {
     const u32 command = ctx.getCommand();
     switch (command) {
+        case SelfControllerCommand::Exit:
+            return cmdExit(ctx, reply);
         case SelfControllerCommand::GetLibraryAppletLaunchableEvent:
             return cmdGetLibraryAppletLaunchableEvent(ctx, reply);
         case SelfControllerCommand::SetOperationModeChangedNotification:
@@ -524,6 +582,15 @@ void SelfController::handleRequest(IPCContext &ctx, IPCContext &reply) {
 
             exit(0);
     }
+}
+
+void SelfController::cmdExit(IPCContext &ctx, IPCContext &reply) {
+    (void)ctx;
+
+    PLOG_INFO << "Exit (stubbed)";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
 }
 
 void SelfController::cmdGetAccumulatedSuspendedTickChangedEvent(IPCContext &ctx, IPCContext &reply) {

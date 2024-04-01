@@ -125,13 +125,17 @@ class LibraryAppletAccessor : public KService {
     Handle appletStateChangedEvent;
 
     void cmdGetAppletStateChangedEvent(IPCContext &ctx, IPCContext &reply);
+    void cmdGetResult(IPCContext &ctx, IPCContext &reply);
+    void cmdPopOutData(IPCContext &ctx, IPCContext &reply);
+    void cmdPushInData(IPCContext &ctx, IPCContext &reply);
+    void cmdStart(IPCContext &ctx, IPCContext &reply);
 
 public:
     LibraryAppletAccessor();
     ~LibraryAppletAccessor();
 
     const char *getName() override {
-        return "LibraryAppletAccessor";
+        return "ILibraryAppletAccessor";
     }
 
     void handleRequest(IPCContext &ctx, IPCContext &reply) override;
@@ -146,7 +150,7 @@ public:
     ~LibraryAppletCreator();
 
     const char *getName() override {
-        return "LibraryAppletCreator";
+        return "ILibraryAppletCreator";
     }
 
     void handleRequest(IPCContext &ctx, IPCContext &reply) override;
@@ -156,6 +160,7 @@ class SelfController : public KService {
     Handle libraryAppletLaunchableEvent;
     Handle accumulatedSuspendedTickChangedEvent;
 
+    void cmdExit(IPCContext &ctx, IPCContext &reply);
     void cmdGetAccumulatedSuspendedTickChangedEvent(IPCContext &ctx, IPCContext &reply);
     void cmdGetLibraryAppletLaunchableEvent(IPCContext &ctx, IPCContext &reply);
     void cmdSetFocusHandlingMode(IPCContext &ctx, IPCContext &reply);
