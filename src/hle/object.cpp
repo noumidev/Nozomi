@@ -176,7 +176,9 @@ Handle KSession::getPortHandle() {
 }
 
 KSharedMemory::KSharedMemory(u64 size) : size(size) {
-    mem = malloc(size);
+    mem = std::malloc(size);
+
+    std::memset(mem, 0, size);
 }
 
 KSharedMemory::~KSharedMemory() {}
@@ -209,7 +211,7 @@ void KSharedMemory::unmap(u64 address, u64 size) {
     }
 
     if (getRefCount() == 1) { // UnmapSharedMemory deletes this object
-        free(mem);
+        std::free(mem);
     }
 
     sys::memory::unmap(address, size >> sys::memory::PAGE_SHIFT);
