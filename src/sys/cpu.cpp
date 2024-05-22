@@ -151,9 +151,7 @@ public:
     }
     
     u64 GetCNTPCT() override {
-        PLOG_WARNING << "Unhandled CNTPCT read";
-
-        return 0;
+        return totalTicks;
     }
 };
 
