@@ -20,6 +20,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include/android)
 include_directories(${PROJECT_SOURCE_DIR}/include/common)
 include_directories(${PROJECT_SOURCE_DIR}/include/hle)
 include_directories(${PROJECT_SOURCE_DIR}/include/hle/service)
+include_directories(${PROJECT_SOURCE_DIR}/include/hle/service/applet)
 include_directories(${PROJECT_SOURCE_DIR}/include/loader)
 include_directories(${PROJECT_SOURCE_DIR}/include/nvidia)
 include_directories(${PROJECT_SOURCE_DIR}/include/nvidia/channel)
@@ -56,6 +57,8 @@ set(SOURCES
     src/hle/service/sm.cpp
     src/hle/service/time.cpp
     src/hle/service/vi.cpp
+    src/hle/service/applet/applet.cpp
+    src/hle/service/applet/error_applet.cpp
     src/loader/loader.cpp
     src/loader/nro.cpp
     src/nvidia/host1x.cpp
@@ -103,6 +106,8 @@ set(HEADERS
     include/hle/service/sm.hpp
     include/hle/service/time.hpp
     include/hle/service/vi.hpp
+    include/hle/service/applet/applet.hpp
+    include/hle/service/applet/error_applet.hpp
     include/loader/loader.hpp
     include/loader/nro.hpp
     include/nvidia/host1x.hpp

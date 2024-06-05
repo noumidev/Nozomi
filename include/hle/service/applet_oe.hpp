@@ -20,11 +20,14 @@
 
 #include <vector>
 
+#include "applet.hpp"
 #include "ipc.hpp"
 #include "object.hpp"
 #include "types.hpp"
 
 namespace hle::service::applet_oe {
+
+using hle::service::applet::Applet;
 
 void handleRequest(IPCContext &ctx, IPCContext &reply);
 
@@ -122,6 +125,8 @@ public:
 };
 
 class LibraryAppletAccessor : public KService {
+    Applet applet;
+
     Handle appletStateChangedEvent;
 
     void cmdGetAppletStateChangedEvent(IPCContext &ctx, IPCContext &reply);
@@ -139,6 +144,8 @@ public:
     }
 
     void handleRequest(IPCContext &ctx, IPCContext &reply) override;
+
+    void makeApplet(u32 appletID);
 };
 
 class LibraryAppletCreator : public KService {

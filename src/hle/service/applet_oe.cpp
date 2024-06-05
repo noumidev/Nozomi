@@ -453,6 +453,10 @@ void LibraryAppletAccessor::handleRequest(IPCContext &ctx, IPCContext &reply) {
     }
 }
 
+void LibraryAppletAccessor::makeApplet(u32 appletID) {
+    applet = applet::makeApplet(appletID);
+}
+
 void LibraryAppletAccessor::cmdGetAppletStateChangedEvent(IPCContext &ctx, IPCContext &reply) {
     (void)ctx;
 
@@ -493,9 +497,9 @@ void LibraryAppletAccessor::cmdPushInData(IPCContext &ctx, IPCContext &reply) {
 
     KService *storage = ctx.getDomainObject(objectID);
 
-    PLOG_INFO << "PushInData (handle = " << std::hex << storage->getHandle().raw << ") (stubbed)";
+    PLOG_INFO << "PushInData (handle = " << std::hex << storage->getHandle().raw << ")";
 
-    // TODO: what does this do?
+    applet.pushInDataBase(((Storage *)storage)->data);
 
     reply.makeReply(2);
     reply.write(KernelResult::Success);
@@ -537,9 +541,14 @@ void LibraryAppletCreator::cmdCreateLibraryApplet(IPCContext &ctx, IPCContext &r
 
     PLOG_INFO << "CreateLibraryApplet (applet ID = " << std::hex << appletID << ", library applet mode = " << libraryAppletMode << ")";
 
+    Handle handle = kernel::makeService<LibraryAppletAccessor>();
+
+    LibraryAppletAccessor *libraryApplet = (LibraryAppletAccessor *)kernel::getObject(handle);
+    libraryApplet->makeApplet(appletID);
+
     reply.makeReply(2, 0, 1);
     reply.write(KernelResult::Success);
-    reply.moveHandle(kernel::makeService<LibraryAppletAccessor>());
+    reply.moveHandle(handle);
 }
 
 void LibraryAppletCreator::cmdCreateStorage(IPCContext &ctx, IPCContext &reply) {
