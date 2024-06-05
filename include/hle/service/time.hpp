@@ -57,6 +57,8 @@ public:
 };
 
 class TimeZoneService : public KService {
+    void cmdToCalendarTimeWithMyRule(IPCContext &ctx, IPCContext &reply);
+
 public:
     TimeZoneService();
     ~TimeZoneService();

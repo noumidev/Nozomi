@@ -18,6 +18,8 @@
 
 #include "time.hpp"
 
+#include <ctime>
+
 #include <plog/Log.h>
 
 #include "handle.hpp"
@@ -36,6 +38,30 @@ namespace Command {
         GetSharedMemoryNativeHandle = 20,
     };
 }
+
+namespace TimeZoneServiceCommand {
+    enum : u32 {
+        ToCalendarTimeWithMyRule = 101,
+    };
+}
+
+struct CalendarTime {
+    u16 year;
+    u8 month;
+    u8 day;
+    u8 hour;
+    u8 minute;
+    u8 second;
+    u8 padding;
+} __attribute__((packed));
+
+struct CalendarAdditionalInfo {
+    u32 dayOfWeek;
+    u32 dayOfYear;
+    u64 timezoneName;
+    u32 isDST;
+    i32 secondsOffset;
+} __attribute__((packed));
 
 Handle sharedMemory{.raw = 0ULL};
 
@@ -164,15 +190,48 @@ TimeZoneService::TimeZoneService() {}
 TimeZoneService::~TimeZoneService() {}
 
 void TimeZoneService::handleRequest(IPCContext &ctx, IPCContext &reply) {
-    (void)reply;
-
     const u32 command = ctx.getCommand();
     switch (command) {
+        case TimeZoneServiceCommand::ToCalendarTimeWithMyRule:
+            return cmdToCalendarTimeWithMyRule(ctx, reply);
         default:
             PLOG_FATAL << "Unimplemented command " << command;
 
             exit(0);
     }
+}
+
+void TimeZoneService::cmdToCalendarTimeWithMyRule(IPCContext &ctx, IPCContext &reply) {
+    time_t posixTime;
+    std::memcpy(&posixTime, ctx.getData(), sizeof(time_t));
+
+    PLOG_INFO << "ToCalendarTimeWithMyRule (POSIX time = " << posixTime << ")";
+
+    const tm ts = *localtime(&posixTime);
+
+    CalendarTime ct;
+    ct.year = ts.tm_year;
+    ct.month = ts.tm_mon;
+    ct.day = ts.tm_mday;
+    ct.hour = ts.tm_hour;
+    ct.minute = ts.tm_min;
+    ct.second = ts.tm_sec;
+
+    CalendarAdditionalInfo cai;
+    cai.dayOfWeek = ts.tm_wday;
+    cai.dayOfYear = ts.tm_yday;
+    std::memcpy(&cai.timezoneName, ts.tm_zone, std::strlen(ts.tm_zone));
+    cai.isDST = ts.tm_isdst;
+    cai.secondsOffset = ts.tm_gmtoff;
+
+    reply.makeReply(10);
+    reply.write(KernelResult::Success);
+    reply.write(*(u64 *)&ct);
+    reply.write(cai.dayOfWeek);
+    reply.write(cai.dayOfYear);
+    reply.write(cai.timezoneName);
+    reply.write(cai.isDST);
+    reply.write(cai.secondsOffset);
 }
 
 }
