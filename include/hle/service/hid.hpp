@@ -27,7 +27,10 @@ namespace hle::service::hid {
 
 void handleRequest(IPCContext &ctx, IPCContext &reply);
 
+void cmdActivateKeyboard(IPCContext &ctx, IPCContext &reply);
+void cmdActivateMouse(IPCContext &ctx, IPCContext &reply);
 void cmdActivateNpadWithRevision(IPCContext &ctx, IPCContext &reply);
+void cmdActivateTouchScreen(IPCContext &ctx, IPCContext &reply);
 void cmdCreateAppletResource(IPCContext &ctx, IPCContext &reply);
 void cmdSetSupportedNpadIdType(IPCContext &ctx, IPCContext &reply);
 void cmdSetSupportedNpadStyleSet(IPCContext &ctx, IPCContext &reply);

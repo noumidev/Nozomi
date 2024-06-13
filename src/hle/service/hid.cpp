@@ -32,6 +32,9 @@ namespace hle::service::hid {
 namespace Command {
     enum : u32 {
         CreateAppletResource,
+        ActivateTouchScreen = 11,
+        ActivateMouse = 21,
+        ActivateKeyboard = 31,
         SetSupportedNpadStyleSet = 100,
         SetSupportedNpadIdType = 102,
         ActivateNpadWithRevision = 109,
@@ -51,6 +54,12 @@ void handleRequest(IPCContext &ctx, IPCContext &reply) {
     switch (command) {
         case Command::CreateAppletResource:
             return cmdCreateAppletResource(ctx, reply);
+        case Command::ActivateTouchScreen:
+            return cmdActivateTouchScreen(ctx, reply);
+        case Command::ActivateMouse:
+            return cmdActivateMouse(ctx, reply);
+        case Command::ActivateKeyboard:
+            return cmdActivateKeyboard(ctx, reply);
         case Command::SetSupportedNpadStyleSet:
             return cmdSetSupportedNpadStyleSet(ctx, reply);
         case Command::SetSupportedNpadIdType:
@@ -64,6 +73,30 @@ void handleRequest(IPCContext &ctx, IPCContext &reply) {
     }
 }
 
+void cmdActivateKeyboard(IPCContext &ctx, IPCContext &reply) {
+    const u32 *data = (u32 *)ctx.getData();
+
+    const u32 pid = data[0];
+    const u64 appletResourceUserID = (u64)data[1] | ((u64)data[2] << 32);
+
+    PLOG_INFO << "ActivateKeyboard (PID = " << std::hex << pid << ", applet resource user ID = " << appletResourceUserID << ")";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
+}
+
+void cmdActivateMouse(IPCContext &ctx, IPCContext &reply) {
+    const u32 *data = (u32 *)ctx.getData();
+
+    const u32 pid = data[0];
+    const u64 appletResourceUserID = (u64)data[1] | ((u64)data[2] << 32);
+
+    PLOG_INFO << "ActivateMouse (PID = " << std::hex << pid << ", applet resource user ID = " << appletResourceUserID << ")";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
+}
+
 void cmdActivateNpadWithRevision(IPCContext &ctx, IPCContext &reply) {
     i32 revision;
     std::memcpy(&revision, ctx.getData(), sizeof(i32));
@@ -74,11 +107,23 @@ void cmdActivateNpadWithRevision(IPCContext &ctx, IPCContext &reply) {
     reply.write(KernelResult::Success);
 }
 
+void cmdActivateTouchScreen(IPCContext &ctx, IPCContext &reply) {
+    const u32 *data = (u32 *)ctx.getData();
+
+    const u32 pid = data[0];
+    const u64 appletResourceUserID = (u64)data[1] | ((u64)data[2] << 32);
+
+    PLOG_INFO << "ActivateTouchScreen (PID = " << std::hex << pid << ", applet resource user ID = " << appletResourceUserID << ")";
+
+    reply.makeReply(2);
+    reply.write(KernelResult::Success);
+}
+
 void cmdCreateAppletResource(IPCContext &ctx, IPCContext &reply) {
     const u32 *data = (u32 *)ctx.getData();
 
     const u32 pid = data[0];
-    const u64 appletResourceUserID = (u64)data[0] | ((u64)data[1] << 32);
+    const u64 appletResourceUserID = (u64)data[1] | ((u64)data[2] << 32);
 
     PLOG_INFO << "CreateAppletResource (PID = " << std::hex << pid << ", applet resource user ID = " << appletResourceUserID << ")";
 
