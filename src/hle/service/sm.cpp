@@ -39,6 +39,7 @@ static std::map<u64, const char *> serviceNameMap {
     {0x646968, "hid"},
     {0x767264766E, "nvdrv"},
     {0x613A767264766E, "nvdrv:a"},
+    {0x6D7370, "psm"},
     {0x7379733a746573, "set:sys"},
     {0x753A656D6974, "time:u"},
     {0x6D3A6976, "vi:m"},

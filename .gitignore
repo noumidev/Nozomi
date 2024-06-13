@@ -33,6 +33,7 @@
 
 # Dev
 build/
+sdmc/
 
 # VS Code
 .vscode/
