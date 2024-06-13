@@ -38,6 +38,7 @@ namespace SupervisorCall {
     enum : u32 {
         SetHeapSize = 0x01,
         SetMemoryAttribute = 0x03,
+        MapMemory,
         QueryMemory = 0x06,
         ExitProcess,
         MapSharedMemory = 0x13,
@@ -74,6 +75,7 @@ namespace BreakReason {
 // GetInfo
 namespace InfoType {
     enum : u32 {
+        CoreMask,
         AliasRegionAddress = 2,
         AliasRegionSize = 3,
         HeapRegionAddress = 4,
@@ -125,6 +127,9 @@ void handleSVC(u32 svc) {
             break;
         case SupervisorCall::SetMemoryAttribute:
             svcSetMemoryAttribute();
+            break;
+        case SupervisorCall::MapMemory:
+            svcMapMemory();
             break;
         case SupervisorCall::QueryMemory:
             svcQueryMemory();
@@ -262,6 +267,13 @@ void svcGetInfo() {
     sys::cpu::set(0, KernelResult::Success);
 
     switch (type) {
+        case InfoType::CoreMask:
+            if ((handle.raw != KernelHandles::CurrentProcess) || (subType != 0)) {
+                PLOG_WARNING << "Unexpected handle/sub type for CoreMask";
+            }
+
+            sys::cpu::set(1, 0); // What is this?
+            break;
         case InfoType::AliasRegionAddress:
             if ((handle.raw != KernelHandles::CurrentProcess) || (subType != 0)) {
                 PLOG_WARNING << "Unexpected handle/sub type for AliasRegionAddress";
@@ -396,6 +408,24 @@ void svcGetSystemTick() {
     PLOG_INFO << "svcGetSystemTick";
 
     sys::cpu::set(0, sys::cpu::getSystemTicks());
+}
+
+void svcMapMemory() {
+    const u64 dstAddress = sys::cpu::get(0);
+    const u64 srcAddress = sys::cpu::get(1);
+    const u64 size = sys::cpu::get(2);
+
+    PLOG_INFO << "svcMapMemory (source address = " << std::hex << srcAddress << ", destination address = " << dstAddress << ", size = " << size << ")";
+
+    if (!sys::memory::isAligned(dstAddress) || !sys::memory::isAligned(srcAddress) || !sys::memory::isAligned(size)) {
+        PLOG_FATAL << "Unaligned memory address/size";
+
+        exit(0);
+    }
+
+    sys::memory::remap(srcAddress, dstAddress, size >> sys::memory::PAGE_SHIFT);
+
+    sys::cpu::set(0, KernelResult::Success);
 }
 
 void svcMapSharedMemory() {

@@ -31,6 +31,7 @@ void svcCreateTransferMemory();
 void svcExitProcess();
 void svcGetInfo();
 void svcGetSystemTick();
+void svcMapMemory();
 void svcMapSharedMemory();
 void svcOutputDebugString();
 void svcQueryMemory();

@@ -319,6 +319,45 @@ void map(void *mem, u64 address, u64 pageNum, u32 type, u32 attribute, u32 permi
     memoryBlockRecord.push_back(memoryBlock);
 }
 
+void remap(u64 srcAddress, u64 dstAddress, u64 pageNum) {
+    PLOG_DEBUG << "Remapping " << pageNum << " pages from " << std::hex << srcAddress << " to " << dstAddress;
+
+    const MemoryBlock memoryBlock = queryMemory(srcAddress);
+
+    const u64 srcPage = srcAddress >> PAGE_SHIFT;
+    const u64 dstPage = dstAddress >> PAGE_SHIFT;
+
+    if (((memoryBlock.permission & MemoryPermission::R) != 0) || ((memoryBlock.permission & MemoryPermission::X) != 0)) {
+        for (u64 page = 0; page < pageNum; page++) {
+            const u64 readPage = page + dstPage;
+
+            if (readTable[readPage] != NULL) {
+                PLOG_FATAL << "Read page " << std::hex << readPage << " is already mapped!";
+
+                exit(0);
+            }
+
+            readTable[readPage] = readTable[page + srcPage];
+        }
+    }
+
+    if ((memoryBlock.permission & MemoryPermission::W) != 0) {
+        for (u64 page = 0; page < pageNum; page++) {
+            const u64 writePage = page + dstPage;
+
+            if (writeTable[writePage] != NULL) {
+                PLOG_FATAL << "Write page " << std::hex << writePage << " is already mapped!";
+
+                exit(0);
+            }
+
+            writeTable[writePage] = writeTable[page + srcPage];
+        }
+    }
+
+    unmap(srcAddress, pageNum);
+}
+
 void unmap(u64 address, u64 pageNum) {
     PLOG_DEBUG << "Unmapping " << pageNum << " pages @ " << std::hex << address;
 
