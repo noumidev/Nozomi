@@ -49,6 +49,7 @@ set(SOURCES
     src/hle/svc.cpp
     src/hle/service/apm.cpp
     src/hle/service/applet_oe.cpp
+    src/hle/service/audren.cpp
     src/hle/service/fatal.cpp
     src/hle/service/fsp_srv.cpp
     src/hle/service/hid.cpp
@@ -99,6 +100,7 @@ set(HEADERS
     include/hle/svc.hpp
     include/hle/service/apm.hpp
     include/hle/service/applet_oe.hpp
+    include/hle/service/audren.hpp
     include/hle/service/fatal.hpp
     include/hle/service/fsp_srv.hpp
     include/hle/service/hid.hpp
