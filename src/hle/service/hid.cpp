@@ -160,7 +160,7 @@ void cmdSetSupportedNpadStyleSet(IPCContext &ctx, IPCContext &reply) {
     reply.write(KernelResult::Success);
 }
 
-AppletResource::AppletResource() {}
+AppletResource::AppletResource() : sharedMemory{.raw = 0ULL} {}
 
 AppletResource::~AppletResource() {}
 
