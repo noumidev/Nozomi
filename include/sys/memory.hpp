@@ -130,6 +130,8 @@ void unmap(u64 address, u64 pageNum);
 
 void *allocate(u64 baseAddress, u64 pageNum, u32 type, u32 attribute, u32 permission);
 
+u64 allocateTLS();
+
 MemoryBlock queryMemory(u64 addr);
 
 }

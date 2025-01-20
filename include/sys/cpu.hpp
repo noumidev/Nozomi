@@ -18,7 +18,10 @@
 
 #pragma once
 
+#include "object.hpp"
 #include "types.hpp"
+
+using hle::KThread;
 
 namespace sys::cpu {
 
@@ -27,6 +30,7 @@ constexpr u64 CPU_CLOCK = 1020000000;
 void init();
 
 void run(u64 ticks);
+void halt();
 
 void addTicks(u64 ticks);
 
@@ -37,5 +41,8 @@ u64 getTLSAddr();
 
 void set(int idx, u64 data);
 void setTLSAddr(u64 addr);
+
+void getContext(KThread *thread);
+void setContext(KThread *thread);
 
 }

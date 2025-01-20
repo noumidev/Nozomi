@@ -29,6 +29,22 @@ class IPCContext;
 
 constexpr int KPORT_NAME_LENGTH = 16;
 
+enum class ThreadStatus {
+    Dormant,
+    Started,
+    Waiting,
+};
+
+struct ThreadContext {
+    u64 regs[31];
+    u64 vregs[64];
+
+    u64 pc, sp;
+    u32 pstate;
+    u32 fpcr, fpsr;
+    u64 tpidr;
+};
+
 // Base class for domain objects
 class KDomain {
 protected:
@@ -135,6 +151,29 @@ public:
 
     void map(u64 address, u64 size, u32 permission);
     void unmap(u64 address, u64 size);
+};
+
+class KThread : public KObject {
+    ThreadContext ctx;
+
+    ThreadStatus status;
+
+    i32 priority, processorID;
+
+public:
+    KThread();
+    ~KThread();
+
+    ThreadContext *getCtx();
+
+    u64 getTLSBase();
+
+    void setTLSBase(u64 tlsBase);
+
+    void setPriority(i32 priority);
+    void setProcessorID(i32 processorID);
+
+    void start();
 };
 
 class KTransferMemory : public KObject {

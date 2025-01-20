@@ -451,6 +451,18 @@ void *allocate(u64 baseAddress, u64 pageNum, u32 type, u32 attribute, u32 permis
     return memoryBlock.mem;
 }
 
+u64 allocateTLS() {
+    static u64 TLS_BASE = MemoryBase::TLSBase;
+
+    (void)allocate(TLS_BASE, 1, 0, 0, MemoryPermission::RW);
+
+    const u64 tlsBase = TLS_BASE;
+
+    TLS_BASE += PAGE_SIZE;
+
+    return tlsBase;
+}
+
 MemoryBlock queryMemory(u64 addr) {
     PLOG_VERBOSE << "Querying memory (addr = " << std::hex << addr << ")";
 

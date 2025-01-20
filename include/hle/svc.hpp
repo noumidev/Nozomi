@@ -27,6 +27,7 @@ void handleSVC(u32 svc);
 void svcBreak();
 void svcCloseHandle();
 void svcConnectToNamedPort();
+void svcCreateThread();
 void svcCreateTransferMemory();
 void svcExitProcess();
 void svcGetInfo();
@@ -39,8 +40,11 @@ void svcResetSignal();
 void svcSendSyncRequest();
 void svcSetHeapSize();
 void svcSetMemoryAttribute();
+void svcSetThreadCoreMask();
 void svcSignalProcessWideKey();
+void svcStartThread();
 void svcUnmapSharedMemory();
+void svcWaitProcessWideKeyAtomic();
 void svcWaitSynchronization();
 
 }

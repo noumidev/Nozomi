@@ -25,12 +25,15 @@
 #include "memory.hpp"
 #include "nvflinger.hpp"
 #include "nvhost_gpu.hpp"
+#include "object.hpp"
 #include "renderer.hpp"
 #include "window.hpp"
 
 namespace sys::emulator {
 
 constexpr u64 CYCLES_PER_FRAME = cpu::CPU_CLOCK / 60;
+
+using hle::Handle;
 
 void init(const char *path) {
     renderer::window::init();
@@ -42,12 +45,18 @@ void init(const char *path) {
     nvidia::nvflinger::init();
     nvidia::channel::nvhost_gpu::init();
 
+    // Create main thread
+    // NOTE: initial values don't matter; loader sets CPU registers directly
+    const Handle mainThreadHandle = hle::kernel::makeThread(memory::MemoryBase::Application, 0, memory::MemoryBase::Stack + memory::STACK_PAGES * memory::PAGE_SIZE, 0, 0);
+
+    hle::kernel::setMainThreadHandle(mainThreadHandle);
+    hle::kernel::startThread(mainThreadHandle);
+
     // Load executable
     loader::load(path);
 
-    // Set up stack and thread-local storage (this will be replaced later on)
+    // Set up stack
     (void)memory::allocate(memory::MemoryBase::Stack, memory::STACK_PAGES, 0, 0, memory::MemoryPermission::RW);
-    (void)memory::allocate(memory::MemoryBase::TLSBase, 1, 0, 0, memory::MemoryPermission::RW);
 }
 
 void run() {

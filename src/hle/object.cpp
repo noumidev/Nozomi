@@ -217,6 +217,34 @@ void KSharedMemory::unmap(u64 address, u64 size) {
     sys::memory::unmap(address, size >> sys::memory::PAGE_SHIFT);
 }
 
+KThread::KThread() : status(ThreadStatus::Dormant) {}
+
+KThread::~KThread() {}
+
+ThreadContext *KThread::getCtx() {
+    return &ctx;
+}
+
+u64 KThread::getTLSBase() {
+    return ctx.tpidr;
+}
+
+void KThread::setTLSBase(u64 tlsBase) {
+    ctx.tpidr = tlsBase;
+}
+
+void KThread::setPriority(i32 priority) {
+    this->priority = priority;
+}
+
+void KThread::setProcessorID(i32 processorID) {
+    this->processorID = processorID;
+}
+
+void KThread::start() {
+    status = ThreadStatus::Started;
+}
+
 KTransferMemory::KTransferMemory(u64 address, u64 size) : address(address), size(size) {}
 
 KTransferMemory::~KTransferMemory() {}

@@ -41,13 +41,17 @@ namespace SupervisorCall {
         MapMemory,
         QueryMemory = 0x06,
         ExitProcess,
+        CreateThread,
+        StartThread,
+        SetThreadCoreMask = 0x0F,
         MapSharedMemory = 0x13,
         UnmapSharedMemory,
         CreateTransferMemory,
         CloseHandle,
         ResetSignal,
         WaitSynchronization,
-        SignalProcessWideKey = 0x1D,
+        WaitProcessWideKeyAtomic = 0x1C,
+        SignalProcessWideKey,
         GetSystemTick,
         ConnectToNamedPort,
         SendSyncRequest = 0x21,
@@ -121,6 +125,8 @@ static const char *getBreakReasonName(u32 reason) {
 }
 
 void handleSVC(u32 svc) {
+    sys::cpu::halt();
+
     switch (svc) {
         case SupervisorCall::SetHeapSize:
             svcSetHeapSize();
@@ -136,6 +142,15 @@ void handleSVC(u32 svc) {
             break;
         case SupervisorCall::ExitProcess:
             svcExitProcess();
+            break;
+        case SupervisorCall::CreateThread:
+            svcCreateThread();
+            break;
+        case SupervisorCall::StartThread:
+            svcStartThread();
+            break;
+        case SupervisorCall::SetThreadCoreMask:
+            svcSetThreadCoreMask();
             break;
         case SupervisorCall::MapSharedMemory:
             svcMapSharedMemory();
@@ -154,6 +169,9 @@ void handleSVC(u32 svc) {
             break;
         case SupervisorCall::WaitSynchronization:
             svcWaitSynchronization();
+            break;
+        case SupervisorCall::WaitProcessWideKeyAtomic:
+            svcWaitProcessWideKeyAtomic();
             break;
         case SupervisorCall::SignalProcessWideKey:
             svcSignalProcessWideKey();
@@ -249,6 +267,19 @@ void svcCreateTransferMemory() {
 
     sys::cpu::set(0, KernelResult::Success);
     sys::cpu::set(1, kernel::makeTransferMemory(address, size, permission).raw);
+}
+
+void svcCreateThread() {
+    const u64 entry = sys::cpu::get(1);
+    const u64 threadContext = sys::cpu::get(2);
+    const u64 stackTop = sys::cpu::get(3);
+    const i32 priority = (i32)sys::cpu::get(4);
+    const i32 processorID = (i32)sys::cpu::get(5);
+
+    PLOG_INFO << "svcCreateThread (entry = " << std::hex << entry << ", ThreadContext* = " << threadContext << ", stack top = " << stackTop << ", priority = " << std::dec << priority << ", processor ID = " << processorID << ")";
+
+    sys::cpu::set(0, KernelResult::Success);
+    sys::cpu::set(1, kernel::makeThread(entry, threadContext, stackTop, priority, processorID).raw);
 }
 
 void svcExitProcess() {
@@ -542,6 +573,16 @@ void svcSetMemoryAttribute() {
     sys::cpu::set(0, KernelResult::Success);
 }
 
+void svcSetThreadCoreMask() {
+    const Handle handle = hle::makeHandle((u32)sys::cpu::get(0));
+    const i32 coreMask0 = sys::cpu::get(1);
+    const u64 coreMask1 = sys::cpu::get(2);
+
+    PLOG_INFO << "svcSetThreadCoreMask (handle = " << std::hex << handle.raw << ", core mask 0 = " << std::dec << coreMask0 << ", core mask 1 = " << coreMask1 << ")";
+
+    sys::cpu::set(0, KernelResult::Success);
+}
+
 // What does this do??
 void svcSignalProcessWideKey() {
     const u64 address = sys::cpu::get(0);
@@ -550,6 +591,16 @@ void svcSignalProcessWideKey() {
     PLOG_WARNING << "svcSignalProcessWideKey (address = " << std::hex << address << ", value = " << std::dec << value << ") (stubbed)";
 
     sys::cpu::set(0, KernelResult::Success);
+}
+
+void svcStartThread() {
+    const Handle handle = hle::makeHandle((u32)sys::cpu::get(0));
+
+    PLOG_INFO << "svcStartThread (handle = " << std::hex << handle.raw << ")";
+
+    sys::cpu::set(0, KernelResult::Success);
+
+    kernel::startThread(handle);
 }
 
 void svcUnmapSharedMemory() {
@@ -580,6 +631,12 @@ void svcUnmapSharedMemory() {
     } else {
         sharedMemory->close();
     }
+
+    sys::cpu::set(0, KernelResult::Success);
+}
+
+void svcWaitProcessWideKeyAtomic() {
+    //PLOG_INFO << "svcWaitProcessWideKeyAtomic (key address = " << std::hex << keyAddress << ", tag address = " << tagAddress << ", tag = " << tag << ", timeout = " << std::dec << timeout << ")";
 
     sys::cpu::set(0, KernelResult::Success);
 }

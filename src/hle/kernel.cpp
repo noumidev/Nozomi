@@ -22,9 +22,14 @@
 #include <type_traits>
 #include <utility>
 
+#include "cpu.hpp"
 #include "memory.hpp"
 
 namespace hle::kernel {
+
+Handle mainThreadHandle;
+
+KThread *activeThread;
 
 void init() {
     table::init();
@@ -33,8 +38,11 @@ void init() {
 }
 
 Handle getMainThreadHandle() {
-    // TODO: return actual main thread handle
-    return Handle{.index = 1, .type = HandleType::KThread};
+    return mainThreadHandle;
+}
+
+void setMainThreadHandle(Handle handle) {
+    mainThreadHandle = handle;
 }
 
 Handle makeEvent(bool autoClear) {
@@ -87,6 +95,29 @@ Handle makeSharedMemory(u64 size) {
     return handle;
 }
 
+Handle makeThread(u64 entry, u64 args, u64 stackTop, i32 priority, i32 processorID) {
+    const Handle handle = table::add(HandleType::KThread, new KThread());
+
+    PLOG_DEBUG << "Making KThread (entry = " << std::hex << entry << ", args* = " << args << ", stack top = " << stackTop << ", priority = " << std::dec << priority << ", processor ID = " << processorID << ")";
+
+    KThread *thread = (KThread *)table::getLast();
+    thread->setHandle(handle);
+
+    thread->setPriority(priority);
+    thread->setProcessorID(processorID);
+
+    // Set up thread context
+    ThreadContext *ctx = thread->getCtx();
+    ctx->pc = entry;
+    ctx->sp = stackTop;
+    ctx->regs[0] = args;
+
+    // Allocate TLS
+    thread->setTLSBase(sys::memory::allocateTLS());
+
+    return handle;
+}
+
 Handle makeTransferMemory(u64 address, u64 size, u32 permission) {
     const Handle handle = table::add(HandleType::KTransferMemory, new KTransferMemory(address, size));
 
@@ -97,6 +128,29 @@ Handle makeTransferMemory(u64 address, u64 size, u32 permission) {
     // TODO: actually change permissions?
 
     return handle;
+}
+
+void startThread(Handle handle) {
+    if (handle.type != HandleType::KThread) {
+        PLOG_FATAL << "Invalid thread handle";
+
+        exit(0);
+    }
+
+    KThread *thread = (KThread *)table::get(handle);
+    thread->start();
+
+    setActiveThread(thread);
+}
+
+void setActiveThread(KThread *thread) {
+    if (activeThread != NULL) {
+        sys::cpu::getContext(activeThread);
+    }
+
+    activeThread = thread;
+
+    sys::cpu::setContext(activeThread);
 }
 
 void destroyServiceSession(Handle handle) {

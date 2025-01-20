@@ -19,6 +19,7 @@
 #include "cpu.hpp"
 
 #include <cstdlib>
+#include <cstring>
 #include <ios>
 
 #include <dynarmic/interface/A64/a64.h>
@@ -183,9 +184,6 @@ void init() {
     jit->ClearCache();
     jit->GetRegisters().fill(0);
     jit->GetVectors().fill(Dynarmic::A64::Vector{});
-
-    jit->SetPC(memory::MemoryBase::Application);
-    jit->SetSP(memory::MemoryBase::Stack + memory::STACK_PAGES * memory::PAGE_SIZE);
     
     setTLSAddr(memory::MemoryBase::TLSBase);
 }
@@ -195,11 +193,16 @@ void run(u64 ticks) {
 
     const auto exitReason = jit->Run();
 
-    if ((u32)exitReason != 0) {
-        PLOG_FATAL << "Unhandled JIT exit";
-
-        exit(0);
+    if ((exitReason != Dynarmic::HaltReason::UserDefined1) && (exitReason != Dynarmic::HaltReason::CacheInvalidation)) {
+        PLOG_WARNING << "Unhandled JIT exit " << std::hex << (u32)exitReason;
     }
+
+    jit->ClearHalt();
+    jit->ClearHalt(Dynarmic::HaltReason::CacheInvalidation);
+}
+
+void halt() {
+    jit->HaltExecution();
 }
 
 void addTicks(u64 ticks) {
@@ -224,6 +227,46 @@ void set(int idx, u64 data) {
 
 void setTLSAddr(u64 addr) {
     tpidr_el0 = addr;
+}
+
+void getContext(KThread *thread) {
+    auto ctx = thread->getCtx();
+
+    ctx->pc = jit->GetPC();
+    ctx->sp = jit->GetSP();
+    ctx->fpcr = jit->GetFpcr();
+    ctx->fpsr = jit->GetFpsr();
+    ctx->pstate = jit->GetPstate();
+
+    ctx->tpidr = getTLSAddr();
+
+    std::memcpy(ctx->regs, jit->GetRegisters().data(), sizeof(ctx->regs));
+    std::memcpy(ctx->vregs, jit->GetVectors().data(), sizeof(ctx->vregs));
+}
+
+void setContext(KThread *thread) {
+    halt();
+
+    auto ctx = thread->getCtx();
+
+    jit->SetPC(ctx->pc);
+    jit->SetSP(ctx->sp);
+    jit->SetFpcr(ctx->fpcr);
+    jit->SetFpsr(ctx->fpsr);
+    jit->SetPstate(ctx->pstate);
+
+    setTLSAddr(ctx->tpidr);
+
+    std::array<u64, 31> regs;
+    std::array<std::array<u64, 2>, 32> vregs;
+
+    std::memcpy(regs.data(), ctx->regs, sizeof(ctx->regs));
+    std::memcpy(vregs.data(), ctx->vregs, sizeof(ctx->vregs));
+
+    jit->SetRegisters(regs);
+    jit->SetVectors(vregs);
+
+    jit->ClearCache();
 }
 
 }

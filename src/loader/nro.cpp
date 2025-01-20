@@ -23,6 +23,7 @@
 
 #include <plog/Log.h>
 
+#include "kernel.hpp"
 #include "memory.hpp"
 
 namespace loader::nro {
@@ -80,8 +81,8 @@ struct EnvContextEntry {
 } __attribute__((packed));
 
 // Dummy list of entries for NRO/homebrew
-constexpr EnvContextEntry envContextTable[] = {
-    EnvContextEntry{.key = EnvContextKey::MainThreadHandle, .flags = 1, .value{1, 0}}, // Main thread handle = 1
+EnvContextEntry envContextTable[] = {
+    EnvContextEntry{.key = EnvContextKey::MainThreadHandle, .flags = 1, .value{0, 0}}, // Main thread handle = 1
     EnvContextEntry{.key = EnvContextKey::AppletType, .flags = 1, .value{0, 0}}, // Applet type = Application
     EnvContextEntry{.key = EnvContextKey::Argv, .flags = 1, .value{0, ARGV0_ADDR}}, // argv[0]
     EnvContextEntry{.key = EnvContextKey::EndOfList, .flags = 1, .value{0, 0}},
@@ -207,22 +208,18 @@ void load(FILE *file) {
     std::memcpy(&nroSize, &header[HeaderOffset::Size], sizeof(u32));
 
     if (fileSize > nroSize) {
-        u32 assetSize = fileSize - nroSize;
-        if (!sys::memory::isAligned(assetSize)) {
-            PLOG_WARNING << "romFS size not aligned";
-
-            assetSize = (assetSize | sys::memory::PAGE_MASK) + 1;
-        }
-
-        void *assetPointer = sys::memory::allocate(applicationBase + data.offset + dataSize, assetSize / sys::memory::PAGE_SIZE, 0, 0, sys::memory::MemoryPermission::R);
-
-        std::fread(assetPointer, sizeof(u8), assetSize, file);
+        const u32 assetSize = fileSize - nroSize;
+        
+        PLOG_DEBUG << "Assets (offset = " << std::hex << nroSize << ", size = " << assetSize << ")";
     }
 
     std::fclose(file);
 }
 
 void makeHomebrewEnv() {
+    // "Inject" main thread handle
+    envContextTable[0].value[0] = hle::kernel::getMainThreadHandle().raw;
+
     void *homebrewEnv = sys::memory::allocate(sys::memory::MemoryBase::HomebrewEnv, 1, 0, 0, sys::memory::MemoryPermission::R);
     std::memcpy(homebrewEnv, envContextTable, sizeof(envContextTable));
 }

@@ -32,11 +32,14 @@ void init();
 
 Handle getMainThreadHandle();
 
+void setMainThreadHandle(Handle handle);
+
 Handle makeEvent(bool autoClear);
 Handle makePort(const char *name);
 Handle makeServiceSession(const char *name);
 Handle makeSession(Handle portHandle);
 Handle makeSharedMemory(u64 size);
+Handle makeThread(u64 entry, u64 args, u64 stackTop, i32 priority, i32 processorID);
 Handle makeTransferMemory(u64 address, u64 size, u32 permission);
 
 template<typename T>
@@ -57,6 +60,9 @@ Handle makeService() {
 
     return handle;
 }
+
+void startThread(Handle handle);
+void setActiveThread(KThread *thread);
 
 void destroyServiceSession(Handle handle);
 void destroySession(Handle handle);
